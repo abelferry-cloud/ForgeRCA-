@@ -1,0 +1,7 @@
+contact_links:
+  - name: 安全漏洞或数据泄漏
+    url: https://github.com/abelferry-cloud/ForgeRCA-/blob/main/SECURITY.md
+    about: 请勿用公开 Issue 报告安全漏洞或敏感数据泄漏，请按 SECURITY.md 走私有渠道。
+  - name: 任务与路线图
+    url: https://github.com/abelferry-cloud/ForgeRCA-/blob/main/TODO.md
+    about: 提交功能类 Issue 前，请先确认对应的里程碑任务 ID 与依赖。
