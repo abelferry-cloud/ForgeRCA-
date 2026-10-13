@@ -1,6 +1,6 @@
 # ForgeRCA · Engineering TODO / Roadmap
 
-> **版本**：v0.4（2026-10-13） · **当前**：M0 工程侧已收口（仓库名锁定 `ForgeRCA-`、Apache-2.0、`main` 主线与分支保护、CI 三门禁、`.env.example`、`SECURITY.md`、复核清单齐备），**唯一剩余项是 M0-06 人工复核**，种子资料仍待领域人员逐条签核；M1–M5 为计划。  
+> **版本**：v0.4.1（2026-10-13） · **当前**：M0 的**工程杂项**已收口（仓库名锁定 `ForgeRCA-`、Apache-2.0、`main` 主线与分支保护、CI 三门禁、`.env.example`、`SECURITY.md`、Issue/PR 模板），M0-07/08/10/11/12/23 已完成；M0-14/M0-15/M0-16 经逐条核实后勾选。但 **M0 整体尚未收口**：M0-06 人工复核按其定义不能由 AI 代劳；M0-17～M0-22 为数据与来源管理项，尚未完成或未经核实。M1–M5 为计划。  
 > **首期设备**：ABB ACS580-01（沿用仓库现有来源清单和数据协议）；后续多品牌扩展单独列入 Backlog。  
 > 本清单是**工作计划，不代表实际已完成**。以下默认任务未勾选；可在 GitHub PR 验收后逐项勾选。
 
@@ -15,7 +15,7 @@
 
 | 里程碑 | 目标 | 依赖 | 当前状态 |
 | --- | --- | --- | --- |
-| **M0** | 数据/文档/安全基线 | 无 | 工程侧已收口（分支保护 + CI 三门禁 + 安全文档）；M0-06 人工复核未完成 |
+| **M0** | 数据/文档/安全基线 | 无 | 工程杂项已收口（分支保护 + CI 三门禁 + 安全文档）；M0-06 人工复核与 M0-17～M0-22 数据项未完成 |
 | **M1** | 基础 Dense RAG 与可信引用 | M0 | 未开始 |
 | **M2** | 混合检索 + 版本过滤 + Reranker | M1 | 未开始 |
 | **M3** | 证据约束的 Neo4j GraphRAG | M1/M2 | 未开始 |
@@ -44,9 +44,9 @@
 ### M0-B · 公开数据与来源管理
 
 - [x] **M0-13 · P0** 将 ABB 官方固件和硬件 PDF 下载到 `data/raw/abb/`，运行 `--check-raw` 校验大小、PDF 文件头和 SHA-256；使用 PDF 工具独立核验实际页数。*(PR #3 已合并)*
-- [ ] **M0-14 · P0** 对设备型号、固件版本、文档修订定义三套独立字段；补全 `firmware_scope` 适用性逻辑和“未知”分支。
-- [ ] **M0-15 · P0** 为每个注释确认 `source_id + pdf_page + locator` 可指向指定 PDF 的实际信息，修复不可追溯项。
-- [ ] **M0-16 · P0** 在 `data/raw/` 与 `data/processed/` 保持原始数据不入 Git；记录来源许可证与归属。
+- [x] **M0-14 · P0** 对设备型号、固件版本、文档修订定义三套独立字段；补全 `firmware_scope` 适用性逻辑和“未知”分支。*([PR #5](https://github.com/abelferry-cloud/ForgeRCA-/pull/5) 已合并：来源清单升为 schema 0.2 并新增已核验 `models`；校验器区分“明确不匹配 / 未知 / 明确不按固件限定”三态，未知固件只允许用于 `insufficient` 场景的限制说明，明确不匹配一律拒绝；固件字段格式受 `ASCKX x.y` 约束)*
+- [x] **M0-15 · P0** 为每个注释确认 `source_id + pdf_page + locator` 可指向指定 PDF 的实际信息，修复不可追溯项。*([PR #5](https://github.com/abelferry-cloud/ForgeRCA-/pull/5) 已合并：`validate_data.py` 强制 `source_id` 必须存在、`pdf_page` 落在来源总页数内**且属于 `manifest.json` 的 `verified_pdf_pages` 白名单**、`printed_page`/`section` 非空。**边界**：以上只证明锚点在结构上可解析到已核验页面；“该页内容确实支持这条注释”属语义判断，仍在 M0-06 人工复核范围内，未在此项宣称完成)*
+- [x] **M0-16 · P0** 在 `data/raw/` 与 `data/processed/` 保持原始数据不入 Git；记录来源许可证与归属。*(2026-10-13 核实：二者均在 `.gitignore` 中，且由 `scripts/check_sensitive_files.py` 的忽略规则回归检查持续守护——本地已下载的两份 PDF 不入库；来源许可与归属记录在 [来源说明](data/sources/README.md)《发布边界》（`redistribution=not_verified`）与 README《许可、来源与安全边界》)*
 - [ ] **M0-17 · P1** 验证可选下载脚本：`python scripts/download_public_data.py --list` / `--dataset maintie-gold`；下载失败须输出清楚的错误。
 - [ ] **M0-18 · P1** 下载 MaintIE gold 后验证 JSON 的 tokens/entities/relations，作为**独立**信息抽取数据集。
 - [ ] **M0-19 · P1** 下载 AI4I 后确认是合成的预测性维护表格数据，仅用于扩展情境，不赋予 ABB 工单 ID。
@@ -55,7 +55,7 @@
 - [ ] **M0-22 · P2** 制定数据卡模板：来源、字段、规模、合成标记、授权、已知偏差、标注状态、预处理版本。
 - [x] **M0-23 · P1** 在 GitHub Settings → Branches 为 `main` 启用分支保护规则：禁止直接推送、要求经 PR 合并、要求 CI 检查通过。*(2026-10-13 已启用：要求经 PR 合并（批准数 0，适配单人维护）、必需状态检查 `validate`、禁止强推与分支删除、要求解决会话；`enforce_admins=false` 保留维护者的紧急通道，与 CONTRIBUTING 的例外条款一致。未开启 `strict`（不强制分支先同步 main），如需收紧可在仓库设置中打开)*
 
-2026-10-13 本地执行记录：M0-03、M0-04、M0-05、M0-13 的来源核验与测试结果见 [ABB PDF 核验记录](data/sources/verification-2026-10-13.md)，已随 PR #3 合并。M0-14、M0-15 的校验规则与逐条定位见 [数据规范](docs/data-spec.md) 和 [审核清单](docs/reviews/seed-v0.2-human-review.md)，待本次 PR 验收后勾选；M0-06 人工领域复核仍未完成。
+2026-10-13 本地执行记录：M0-03、M0-04、M0-05、M0-13 的来源核验与测试结果见 [ABB PDF 核验记录](data/sources/verification-2026-10-13.md)，已随 PR #3 合并。M0-14、M0-15 的校验规则与逐条定位见 [数据规范](docs/data-spec.md) 和 [审核清单](docs/reviews/seed-v0.2-human-review.md)，已随 PR #5 合并并在 v0.4.1 核实后勾选。M0-16 于 v0.4.1 核实勾选。M0-06 人工领域复核仍未完成；M0-17～M0-22 尚未逐条核实。
 
 **M0 DoD**：新贡献者按 README 的现有命令可完成校验；每条种子事实都能追到真实页码或明确的合成记录；未来的第三方数据和盲测答案没有混入主语料；所有改动均经功能分支与 PR 进入 `main`，`main` 历史保持可校验。
 
