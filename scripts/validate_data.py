@@ -27,6 +27,23 @@ def timestamp(value):
     return result
 
 
+def validate_firmware(value, label):
+    # Seed versions include the control program, not the document revision.
+    require(value is None or (isinstance(value, str) and re.fullmatch(r"ASCKX [0-9]+\.[0-9]+", value)), f"Invalid firmware: {label}")
+
+
+def firmware_applicability(support, version):
+    if support["kind"] == "knowledge_note":
+        scope = support["firmware_scope"]
+        if scope is None:
+            return "applicable"
+    else:
+        scope = support["firmware_version"]
+    if scope is None or version is None:
+        return "unknown"
+    return "applicable" if scope == version else "inapplicable"
+
+
 def unique(records, label):
     result = {}
     for record in records:
@@ -54,7 +71,13 @@ def load_data(root=ROOT):
 
 def validate(data):
     sources = unique(data["sources"], "source")
+    models = set()
     for source in sources.values():
+        source_models = source.get("models")
+        require(isinstance(source_models, list) and source_models and all(isinstance(model, str) and model.strip() == model and model for model in source_models), f"Invalid source models: {source['id']}")
+        require(len(source_models) == len(set(source_models)), f"Invalid source models: {source['id']}")
+        models.update(source_models)
+        validate_firmware(source["firmware_scope"], source["id"])
         require(re.fullmatch(r"[0-9a-f]{64}", source["sha256"]), "Invalid source SHA-256")
         require(source["bytes"] > 0 and source["pages"] > 0, "Invalid source dimensions")
         require(source["redistribution"] == "not_verified", "Review source redistribution changes explicitly")
@@ -67,15 +90,17 @@ def validate(data):
             rid = record["id"]
             require(record["kind"] == kind, f"Wrong kind: {rid}")
             require(isinstance(record["synthetic"], bool), f"Synthetic flag required: {rid}")
-            require(record["text"].strip() and record["model"], f"Empty text/model: {rid}")
+            require(record["text"].strip() and isinstance(record["model"], str) and record["model"].strip(), f"Empty text/model: {rid}")
+            validate_firmware(record["firmware_scope" if kind == "knowledge_note" else "firmware_version"], rid)
             timestamp(record["available_at"])
             locator = record["locator"]
             if kind == "knowledge_note" and not record["synthetic"]:
                 require(locator["source_id"] in sources, f"Unknown source: {rid}")
                 source = sources[locator["source_id"]]
-                require(1 <= locator["pdf_page"] <= source["pages"], f"Invalid PDF page: {rid}")
+                require(record["model"] in source["models"], f"Source model mismatch: {rid}")
+                require(type(locator["pdf_page"]) is int and 1 <= locator["pdf_page"] <= source["pages"], f"Invalid PDF page: {rid}")
                 require(locator["pdf_page"] in source["verified_pdf_pages"], f"Unverified PDF page: {rid}")
-                require(locator["printed_page"] and locator["section"], f"Incomplete locator: {rid}")
+                require(all(isinstance(locator[key], str) and locator[key].strip() for key in ("printed_page", "section")), f"Incomplete locator: {rid}")
                 require(record["document_revision"] == source["revision"], f"Revision mismatch: {rid}")
                 require(record["firmware_scope"] == source["firmware_scope"], f"Firmware scope mismatch: {rid}")
             else:
@@ -132,6 +157,9 @@ def validate(data):
             require(not any(r.get("incident_group") == incident for r in records), "Target incident leaked into corpus")
             status = question["expected_status"]
             require(status in ("supported", "insufficient", "out_of_scope"), f"Invalid status: {qid}")
+            require(isinstance(question["model"], str) and question["model"].strip(), f"Invalid question model: {qid}")
+            require((question["model"] in models) == (status != "out_of_scope"), f"Model/status mismatch: {qid}")
+            validate_firmware(question["firmware_version"], qid)
             causes = question["acceptable_cause_ids"]
             gold = question["gold_evidence_ids"]
             require(len(gold) == len(set(gold)), f"Duplicate gold evidence: {qid}")
@@ -147,9 +175,10 @@ def validate(data):
                 support = evidence[eid]
                 require(support["model"] == question["model"], f"Wrong-model gold evidence: {qid}")
                 require(timestamp(support["available_at"]) <= as_of, f"Future evidence: {qid} {eid}")
-                scope = support.get("firmware_scope") or support.get("firmware_version")
-                if status == "supported" and scope:
-                    require(question["firmware_version"] == scope, f"Unsupported firmware: {qid}")
+                applicability = firmware_applicability(support, question["firmware_version"])
+                require(applicability != "inapplicable", f"Unsupported firmware: {qid} {eid}")
+                if applicability == "unknown":
+                    require(status == "insufficient", f"Unknown firmware: {qid} {eid}")
     return {"sources": len(sources), "evidence": len(evidence), "questions": len(questions), "graph_nodes": len(nodes), "graph_edges": len(edges)}
 
 
