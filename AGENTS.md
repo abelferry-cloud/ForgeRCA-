@@ -1,7 +1,7 @@
 # ForgeRCA working agreement
 
 - Before coding, state assumptions, inspect related files, and use at least one exploration subagent. Review its findings before editing. If subagents are unavailable, explicitly describe the fallback exploration.
-- Use a `codex/` feature branch. Do not make substantive changes directly on `master` or `main`.
+- `main` is the only stable line and the default branch. NEVER commit or push directly to `main` — cut a topic branch (`feat/`, `fix/`, `docs/`, `chore/`, `data/`) from `main` and open a Pull Request. The only exception is a genuinely trivial, zero-risk edit (typo, dead link, badge/formatting) or an explicit instruction from the maintainer. When unsure, use a PR. `codex/initialize-project` is a legacy archive branch and must not receive new commits. See `CONTRIBUTING.md` §分支与合并规范.
 - Keep changes scoped, prefer simple implementations, and do not refactor unrelated code.
 - Keep project documentation in Chinese; use English identifiers in machine-readable data and code.
 - This repository is currently an initialization, not a working diagnosis application. Do not describe planned features or target metrics as implemented results.
