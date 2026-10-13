@@ -1,0 +1,33 @@
+name: "Feature / 任务"
+description: "实现 TODO.md 中的一个可验收任务"
+title: "[M1-00] "
+labels: ["enhancement"]
+body:
+  - type: input
+    id: task
+    attributes:
+      label: "TODO 任务 ID"
+      placeholder: "M2-05 / M3-14 ..."
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: "背景与问题"
+      description: "现有行为、希望解决的故障案例或技术问题"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "验收标准与测试"
+      description: "可重复执行的命令、输入输出、风险与断言"
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: "数据来源与许可 / 安全影响"
+      description: "是否涉及厂商手册、合成数据、真实工单、泄漏风险等"
+    validations:
+      required: false

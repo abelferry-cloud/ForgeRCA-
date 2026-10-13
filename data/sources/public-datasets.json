@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-13",
+  "policy": "External public datasets are optional independent research inputs; do not mix into ABB synthetic events without separate evidence and provenance review.",
+  "datasets": [
+    {
+      "key": "maintie-gold",
+      "publisher": "nlp-tlp/maintie",
+      "purpose": "maintenance text entity and relation extraction benchmark",
+      "license": "MIT (upstream repository statement)",
+      "landing_page": "https://github.com/nlp-tlp/maintie",
+      "download_url": "https://raw.githubusercontent.com/nlp-tlp/maintie/main/data/gold_release.json",
+      "may_be_merged_into_abb_corpus": false
+    },
+    {
+      "key": "maintie-silver",
+      "publisher": "nlp-tlp/maintie",
+      "purpose": "coarse-grained maintenance text IE augmentation",
+      "license": "MIT (upstream repository statement)",
+      "landing_page": "https://github.com/nlp-tlp/maintie",
+      "download_url": "https://raw.githubusercontent.com/nlp-tlp/maintie/main/data/silver_release.json",
+      "may_be_merged_into_abb_corpus": false
+    },
+    {
+      "key": "ai4i",
+      "publisher": "UCI Machine Learning Repository",
+      "purpose": "synthetic tabular predictive maintenance research",
+      "license": "CC BY 4.0",
+      "doi": "10.24432/C5HS5C",
+      "landing_page": "https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset",
+      "download_url": "https://archive.ics.uci.edu/static/public/601/ai4i%2B2020%2Bpredictive%2Bmaintenance%2Bdataset.zip",
+      "may_be_merged_into_abb_corpus": false
+    },
+    {
+      "key": "metropt3",
+      "publisher": "UCI Machine Learning Repository",
+      "purpose": "real compressor sensor time-series anomaly research",
+      "license": "CC BY 4.0",
+      "doi": "10.24432/C5VW3R",
+      "landing_page": "https://archive.ics.uci.edu/dataset/791/metropt+3+dataset",
+      "download_url": "https://archive.ics.uci.edu/static/public/791/metropt%2B3%2Bdataset.zip",
+      "may_be_merged_into_abb_corpus": false
+    }
+  ]
+}
