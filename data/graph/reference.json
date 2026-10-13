@@ -1,0 +1,216 @@
+{
+  "schema_version": "0.1",
+  "purpose": "extraction_reference_not_runtime_graph",
+  "review_status": "agent_checked_pending_human",
+  "nodes": [
+    {
+      "id": "ACS580-01",
+      "type": "EquipmentModel",
+      "label": "ABB ACS580-01"
+    },
+    {
+      "id": "ACS580-01:2310",
+      "type": "FaultCode",
+      "label": "2310",
+      "model": "ACS580-01"
+    },
+    {
+      "id": "ACS580-01:3210",
+      "type": "FaultCode",
+      "label": "3210",
+      "model": "ACS580-01"
+    },
+    {
+      "id": "ACS580-01:3220",
+      "type": "FaultCode",
+      "label": "3220",
+      "model": "ACS580-01"
+    },
+    {
+      "id": "ACS580-01:3381",
+      "type": "FaultCode",
+      "label": "3381",
+      "model": "ACS580-01"
+    },
+    {
+      "id": "ACS580-01:4210",
+      "type": "FaultCode",
+      "label": "4210",
+      "model": "ACS580-01"
+    },
+    {
+      "id": "ACS580-01:7081",
+      "type": "FaultCode",
+      "label": "7081",
+      "model": "ACS580-01"
+    },
+    {
+      "id": "short_acceleration_ramp",
+      "type": "Cause",
+      "label": "short_acceleration_ramp"
+    },
+    {
+      "id": "mechanical_overload",
+      "type": "Cause",
+      "label": "mechanical_overload"
+    },
+    {
+      "id": "short_deceleration_ramp",
+      "type": "Cause",
+      "label": "short_deceleration_ramp"
+    },
+    {
+      "id": "input_fuse_open",
+      "type": "Cause",
+      "label": "input_fuse_open"
+    },
+    {
+      "id": "motor_disconnected",
+      "type": "Cause",
+      "label": "motor_disconnected"
+    },
+    {
+      "id": "heatsink_dust",
+      "type": "Cause",
+      "label": "heatsink_dust"
+    },
+    {
+      "id": "cooling_fan_failure",
+      "type": "Cause",
+      "label": "cooling_fan_failure"
+    },
+    {
+      "id": "panel_connection_loose",
+      "type": "Cause",
+      "label": "panel_connection_loose"
+    }
+  ],
+  "edges": [
+    {
+      "id": "E001",
+      "from": "ACS580-01",
+      "to": "ACS580-01:2310",
+      "relation": "HAS_FAULT_CODE",
+      "evidence_id": "K001",
+      "basis": "manufacturer_note",
+      "synthetic": false
+    },
+    {
+      "id": "E002",
+      "from": "ACS580-01",
+      "to": "ACS580-01:3210",
+      "relation": "HAS_FAULT_CODE",
+      "evidence_id": "K002",
+      "basis": "manufacturer_note",
+      "synthetic": false
+    },
+    {
+      "id": "E003",
+      "from": "ACS580-01",
+      "to": "ACS580-01:3220",
+      "relation": "HAS_FAULT_CODE",
+      "evidence_id": "K003",
+      "basis": "manufacturer_note",
+      "synthetic": false
+    },
+    {
+      "id": "E004",
+      "from": "ACS580-01",
+      "to": "ACS580-01:3381",
+      "relation": "HAS_FAULT_CODE",
+      "evidence_id": "K004",
+      "basis": "manufacturer_note",
+      "synthetic": false
+    },
+    {
+      "id": "E005",
+      "from": "ACS580-01",
+      "to": "ACS580-01:4210",
+      "relation": "HAS_FAULT_CODE",
+      "evidence_id": "K005",
+      "basis": "manufacturer_note",
+      "synthetic": false
+    },
+    {
+      "id": "E006",
+      "from": "ACS580-01",
+      "to": "ACS580-01:7081",
+      "relation": "HAS_FAULT_CODE",
+      "evidence_id": "K006",
+      "basis": "manufacturer_note",
+      "synthetic": false
+    },
+    {
+      "id": "E007",
+      "from": "ACS580-01:2310",
+      "to": "short_acceleration_ramp",
+      "relation": "MAY_BE_CAUSED_BY",
+      "evidence_id": "WO001",
+      "basis": "synthetic_history",
+      "synthetic": true
+    },
+    {
+      "id": "E008",
+      "from": "ACS580-01:2310",
+      "to": "mechanical_overload",
+      "relation": "MAY_BE_CAUSED_BY",
+      "evidence_id": "WO002",
+      "basis": "synthetic_history",
+      "synthetic": true
+    },
+    {
+      "id": "E009",
+      "from": "ACS580-01:3210",
+      "to": "short_deceleration_ramp",
+      "relation": "MAY_BE_CAUSED_BY",
+      "evidence_id": "WO003",
+      "basis": "synthetic_history",
+      "synthetic": true
+    },
+    {
+      "id": "E010",
+      "from": "ACS580-01:3220",
+      "to": "input_fuse_open",
+      "relation": "MAY_BE_CAUSED_BY",
+      "evidence_id": "WO004",
+      "basis": "synthetic_history",
+      "synthetic": true
+    },
+    {
+      "id": "E011",
+      "from": "ACS580-01:3381",
+      "to": "motor_disconnected",
+      "relation": "MAY_BE_CAUSED_BY",
+      "evidence_id": "WO005",
+      "basis": "synthetic_history",
+      "synthetic": true
+    },
+    {
+      "id": "E012",
+      "from": "ACS580-01:4210",
+      "to": "heatsink_dust",
+      "relation": "MAY_BE_CAUSED_BY",
+      "evidence_id": "WO006",
+      "basis": "synthetic_history",
+      "synthetic": true
+    },
+    {
+      "id": "E013",
+      "from": "ACS580-01:4210",
+      "to": "cooling_fan_failure",
+      "relation": "MAY_BE_CAUSED_BY",
+      "evidence_id": "WO007",
+      "basis": "synthetic_history",
+      "synthetic": true
+    },
+    {
+      "id": "E014",
+      "from": "ACS580-01:7081",
+      "to": "panel_connection_loose",
+      "relation": "MAY_BE_CAUSED_BY",
+      "evidence_id": "WO008",
+      "basis": "synthetic_history",
+      "synthetic": true
+    }
+  ]
+}

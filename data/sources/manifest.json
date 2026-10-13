@@ -1,0 +1,54 @@
+{
+  "schema_version": "0.1",
+  "sources": [
+    {
+      "id": "ABB-FW-H-ZH",
+      "title": "ACS580 标准控制程序固件手册",
+      "publisher": "ABB",
+      "document_code": "3AXD50000016430",
+      "revision": "H",
+      "language": "zh-CN",
+      "effective_date": "2024-03-30",
+      "firmware_scope": "ASCKX 2.16",
+      "url": "https://library.e.abb.com/public/2aca7fc08722463ca4969d62ae69893e/3AXD50000016430_ZH_ACS580_FW_H_A5.pdf",
+      "local_path": "data/raw/abb/acs580-firmware-h-zh.pdf",
+      "bytes": 13438874,
+      "pages": 614,
+      "sha256": "e6ed9eab8c6a06afc0411a7ab11ace174e56385f9c554a221c3309571e4eb2b6",
+      "accessed_at": "2026-10-13",
+      "redistribution": "not_verified",
+      "verification": "downloaded_hash_and_text_checked",
+      "verified_pdf_pages": [
+        3,
+        13,
+        536,
+        537,
+        538,
+        542
+      ]
+    },
+    {
+      "id": "ABB-HW-D-ZH",
+      "title": "ACS580-01 传动硬件手册",
+      "publisher": "ABB",
+      "document_code": "3AXD50000044837",
+      "revision": "D",
+      "language": "zh-CN",
+      "effective_date": "2023-02-07",
+      "firmware_scope": null,
+      "url": "https://library.e.abb.com/public/e583e1b3d0444f1785df2b8330fd3498/ZH_ACS580-01_HW_D_A5.pdf",
+      "local_path": "data/raw/abb/acs580-01-hardware-d-zh.pdf",
+      "bytes": 44371188,
+      "pages": 316,
+      "sha256": "c2aa260efb335368930df8bd5ea44c8fd715fa1a845cc344fcfd089a870a2ece",
+      "accessed_at": "2026-10-13",
+      "redistribution": "not_verified",
+      "verification": "downloaded_hash_and_text_checked",
+      "verified_pdf_pages": [
+        3,
+        25,
+        152
+      ]
+    }
+  ]
+}

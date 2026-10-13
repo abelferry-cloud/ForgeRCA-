@@ -1,0 +1,18 @@
+# Local credentials and environments
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Third-party originals, generated indexes, traces and experiment outputs
+data/raw/
+data/processed/
+data/indexes/
+artifacts/
+*.log
+.DS_Store
+Thumbs.db
