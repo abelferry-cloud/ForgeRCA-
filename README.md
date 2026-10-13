@@ -194,6 +194,7 @@ ForgeRCA-/
 - **本项目原创代码、文档与合成数据采用 [Apache License 2.0](LICENSE) 授权。** 你可以自由使用、修改和再分发，需保留版权与许可声明，并注意 Apache-2.0 第 4 条对「标注修改」和 NOTICE 的要求。
 - **Apache-2.0 不覆盖第三方资料。** 厂商 PDF 版权属于其权利人；MaintIE 声明 MIT、AI4I 2020 与 MetroPT-3 页面声明 CC BY 4.0，各自继续适用其原始授权，不受本仓库许可证覆盖。详见 [公开数据来源](docs/public-datasets.md)。
 - 不要把公开仓库等同于已获得全部内容的开源授权：仓库内不同来源的文件可能适用不同条款。
+- **安全边界与数据泄漏处置见 [SECURITY.md](SECURITY.md)**：漏洞与敏感数据泄漏请走私有渠道，不要用公开 Issue 报告。CI 已内置凭据与厂商原文的扫描门禁（`scripts/check_sensitive_files.py`）。
 - 厂商 PDF 版权属于其权利人；不将全文、截图或自动抽取的完整文本提交公开仓库，除非明确取得再分发许可。
 - [MaintIE](https://github.com/nlp-tlp/maintie) 声明 MIT 许可；[AI4I 2020](https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset) 与 [MetroPT-3](https://archive.ics.uci.edu/dataset/791/metropt+3+dataset) 页面声明 CC BY 4.0。使用时应保留署名和来源。
 - 项目不隶属于 ABB 或其他设备厂商；输出仅用于辅助分析，不应替代合格维护人员及正式安全操作规程。

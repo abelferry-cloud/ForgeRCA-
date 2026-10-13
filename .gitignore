@@ -8,6 +8,24 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Local secret material (see SECURITY.md for the leak response process)
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Local database volumes and service data
+docker/volumes/
+postgres-data/
+neo4j-data/
+opensearch-data/
+*.sqlite
+*.sqlite3
+*.dump
+
 # Third-party originals, generated indexes, traces and experiment outputs
 data/raw/
 data/processed/

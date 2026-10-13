@@ -70,9 +70,11 @@ SECRET_PATTERNS = (
 SECRET_NAME_RE = re.compile(
     r"(?P<name>[A-Za-z0-9_]*(?:password|passwd|secret|token|api[_-]?key"
     r"|access[_-]?key|private[_-]?key|credential)[A-Za-z0-9_]*)"
-    # A backslash ends the value: "\n" and "\t" are escape sequences in source
-    # code, not credential material, and matching across them over-reports.
-    r"\s*[:=]\s*[\"']?(?P<value>[^\s\"'#\\]+)",
+    # Separators are limited to spaces and tabs on purpose: an empty assignment
+    # such as "OPENSEARCH_PASSWORD=" must not read the next line as its value.
+    # A backslash also terminates the value, because "\n" in source code is an
+    # escape sequence, not credential material.
+    r"[ \t]*[:=][ \t]*[\"']?(?P<value>[^\s\"'#\\]+)",
     re.IGNORECASE,
 )
 
@@ -94,6 +96,10 @@ IGNORE_EXPECTED_IGNORED = (
     "data/indexes/example/segment.json",
     "artifacts/evaluations/example/config.json",
     ".venv/lib/example.py",
+    # M0-10: secret material and local database volumes.
+    "secrets/service-account.json",
+    "deploy/service.pem",
+    "postgres-data/pgdata/base",
 )
 
 IGNORE_EXPECTED_TRACKED = (ENV_TEMPLATE,)

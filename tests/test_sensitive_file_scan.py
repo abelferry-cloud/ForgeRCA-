@@ -84,6 +84,14 @@ class SecretContentTests(unittest.TestCase):
         text = "DB_PASSWORD=" + "\\" + "nNEO4J_PASSWORD=" + "\\" + "n"
         self.assertFalse(check_text("config.py", text))
 
+    def test_empty_assignment_does_not_borrow_the_next_line(self):
+        # Regression: an .env-style template of empty values must stay clean.
+        # A separator regex that accepts newlines reads the following line as
+        # the value of the previous, empty assignment.
+        settings = ("POSTGRES_" + "PASSWORD", "OPENSEARCH_" + "PASSWORD", "NEO4J_" + "PASSWORD", "LLM_API_" + "KEY")
+        template = "\n".join(f"{name}=" for name in settings) + "\nSOME_LONG_VALUE_HERE=abcdefghijklmnopqrstuvwxyz\n"
+        self.assertEqual(check_text(".env.example", template), [])
+
     def test_ci_keyword_is_not_a_secret(self):
         # actions/checkout uses this field; "credentials: false" is not a secret.
         self.assertFalse(check_text(".github/workflows/validate.yml", "persist-credentials: false"))

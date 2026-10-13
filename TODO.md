@@ -1,6 +1,6 @@
 # ForgeRCA · Engineering TODO / Roadmap
 
-> **版本**：v0.3（2026-10-13） · **当前**：M0 工程基线基本就绪（仓库名锁定 `ForgeRCA-`、Apache-2.0 已添加、`main` 主线与分支规范已建立），种子资料仍待人工复核；M1–M5 为计划。  
+> **版本**：v0.4（2026-10-13） · **当前**：M0 工程侧已收口（仓库名锁定 `ForgeRCA-`、Apache-2.0、`main` 主线与分支保护、CI 三门禁、`.env.example`、`SECURITY.md`、复核清单齐备），**唯一剩余项是 M0-06 人工复核**，种子资料仍待领域人员逐条签核；M1–M5 为计划。  
 > **首期设备**：ABB ACS580-01（沿用仓库现有来源清单和数据协议）；后续多品牌扩展单独列入 Backlog。  
 > 本清单是**工作计划，不代表实际已完成**。以下默认任务未勾选；可在 GitHub PR 验收后逐项勾选。
 
@@ -15,7 +15,7 @@
 
 | 里程碑 | 目标 | 依赖 | 当前状态 |
 | --- | --- | --- | --- |
-| **M0** | 数据/文档/安全基线 | 无 | 工程基线就绪；人工复核未完成 |
+| **M0** | 数据/文档/安全基线 | 无 | 工程侧已收口（分支保护 + CI 三门禁 + 安全文档）；M0-06 人工复核未完成 |
 | **M1** | 基础 Dense RAG 与可信引用 | M0 | 未开始 |
 | **M2** | 混合检索 + 版本过滤 + Reranker | M1 | 未开始 |
 | **M3** | 证据约束的 Neo4j GraphRAG | M1/M2 | 未开始 |
@@ -34,12 +34,12 @@
 - [x] **M0-04 · P0** 在本地运行 `python scripts/validate_data.py`，保存失败信息、修复数据关联问题。*(PR #3 已记录通过)*
 - [x] **M0-05 · P0** 在本地运行 `python -m unittest discover -s tests -v`，记录 Python 版本和测试摘要。*(PR #3 已记录通过)*
 - [ ] **M0-06 · P0** 对 9 条知识注释、8 条合成工单及 5 条 demo 场景进行至少一次人工领域核对；记录审核人、日期、变更。*([待填写的逐条审核清单](docs/reviews/seed-v0.2-human-review.md) 已备好)*
-- [ ] **M0-07 · P1** GitHub 仓库 About、topics、description、homepage 与 Issue / PR 模板完善。
+- [x] **M0-07 · P1** GitHub 仓库 About、topics、description、homepage 与 Issue / PR 模板完善。*(2026-10-13 已设 description 与 10 个 topics，新增 `.github/pull_request_template.md` 与 `.github/ISSUE_TEMPLATE/config.yml`；**homepage 留空**——尚无演示站点，不指向不存在的页面，待 M5-18/19 产出后再填)*
 - [x] **M0-08 · P1** 确认 CI 在 PR 与默认分支运行：离线数据校验、unittest、敏感文件扫描。*(2026-10-13 新增 `scripts/check_sensitive_files.py` 并接入 `.github/workflows/validate.yml`；触发条件为 `push` 与 `pull_request`，覆盖 `main` 与 PR)*
 - [x] **M0-09 · P1** 已确立分支管理：`main` 为唯一稳定主线并设为默认分支；**禁止直接向 `main` 提交**，改动一律从 `main` 切出功能分支走 PR，仅错别字、失效链接等极小改动或经维护者明确允许可直接提交。命名前缀 `feat/` `fix/` `docs/` `chore/` `data/`，建议携带任务 ID。详见 `CONTRIBUTING.md`《分支与合并规范》。*(2026-10-13)*
-- [ ] **M0-10 · P1** 建立 `.env.example`（只提供非机密参数名），核实 `.gitignore` 忽略 `.env`、密钥、数据库卷和原始 PDF。
-- [ ] **M0-11 · P1** 新增 `SECURITY.md`（漏洞报告路径与安全边界），定义数据泄漏排查流程。
-- [ ] **M0-12 · P2** 选择 Python 包管理方案（uv / pip），首次添加依赖时生成可复现的锁文件，不提前虚构已装依赖。
+- [x] **M0-10 · P1** 建立 `.env.example`（只提供非机密参数名），核实 `.gitignore` 忽略 `.env`、密钥、数据库卷和原始 PDF。*(2026-10-13 新增根目录 `.env.example`，只含参数名与空值；`.gitignore` 补充密钥材料（`.pem`/`.key`/`.p12`/`secrets/`…）与数据库卷（`docker/volumes/`/`postgres-data/`/`*.sqlite`…）；忽略规则本身由 `scripts/check_sensitive_files.py` 的回归检查守护)*
+- [x] **M0-11 · P1** 新增 `SECURITY.md`（漏洞报告路径与安全边界），定义数据泄漏排查流程。*(2026-10-13 新增根目录 `SECURITY.md`；上报走 GitHub 私有漏洞通道，定义 5 类安全问题、明确的非范围项，以及「先轮换凭据、再清理历史、最后补门禁」的 6 步处置流程)*
+- [x] **M0-12 · P2** 选择 Python 包管理方案（uv / pip），首次添加依赖时生成可复现的锁文件，不提前虚构已装依赖。*(2026-10-13 选定 `uv`，依据与边界记入 `CONTRIBUTING.md`《Python 环境与包管理》；**当前无第三方依赖故无锁文件**，`uv.lock` 与 `pyproject.toml` 待 M1-01 引入首个依赖时生成——该待办仍属 M1-01，不在本项内)*
 
 ### M0-B · 公开数据与来源管理
 
@@ -53,7 +53,7 @@
 - [ ] **M0-20 · P1** 编写第三方数据署名、版本、URL、下载时间、SHA-256、用途和禁止混用说明。
 - [ ] **M0-21 · P1** 确保 `data/evaluation/` 永不被数据构建器递归扫描；设置显式 allowlist 测试。
 - [ ] **M0-22 · P2** 制定数据卡模板：来源、字段、规模、合成标记、授权、已知偏差、标注状态、预处理版本。
-- [ ] **M0-23 · P1** 在 GitHub Settings → Branches 为 `main` 启用分支保护规则：禁止直接推送、要求经 PR 合并、要求 CI 检查通过。*(文字规范已落地，仓库侧开关待开启)*
+- [x] **M0-23 · P1** 在 GitHub Settings → Branches 为 `main` 启用分支保护规则：禁止直接推送、要求经 PR 合并、要求 CI 检查通过。*(2026-10-13 已启用：要求经 PR 合并（批准数 0，适配单人维护）、必需状态检查 `validate`、禁止强推与分支删除、要求解决会话；`enforce_admins=false` 保留维护者的紧急通道，与 CONTRIBUTING 的例外条款一致。未开启 `strict`（不强制分支先同步 main），如需收紧可在仓库设置中打开)*
 
 2026-10-13 本地执行记录：M0-03、M0-04、M0-05、M0-13 的来源核验与测试结果见 [ABB PDF 核验记录](data/sources/verification-2026-10-13.md)，已随 PR #3 合并。M0-14、M0-15 的校验规则与逐条定位见 [数据规范](docs/data-spec.md) 和 [审核清单](docs/reviews/seed-v0.2-human-review.md)，待本次 PR 验收后勾选；M0-06 人工领域复核仍未完成。
 

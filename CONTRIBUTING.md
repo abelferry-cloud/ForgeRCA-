@@ -50,6 +50,16 @@ python -m unittest discover -s tests -p 'test_download_public_data.py' -v
 
 如果修改了新引入的构建依赖，请记录锁文件、Python 版本、复现命令和运行结果。当前不应假定 FastAPI / Neo4j / LangGraph 服务已可运行。
 
+## Python 环境与包管理
+
+**选定方案：`uv`（Python 3.11+）。** 决策记录于 M0-12，日期 2026-10-13。
+
+- 初始化脚本与离线校验只使用标准库，因此**当前没有第三方运行依赖，也没有锁文件**。在 M1 引入第一个依赖之前，不预先生成 `uv.lock`，也不在 `pyproject.toml` 中写入未经安装验证的依赖项——空锁文件和虚构依赖都会破坏可复现性。
+- 从 M1 起：依赖声明写入 `pyproject.toml`（由 M1-01 建立），`uv.lock` **提交到仓库**并随依赖变更同步更新；CI 依据锁文件安装。
+- 本地环境：`pyproject.toml` 存在后使用 `uv sync`。在此之前，直接用 Python 3.11+ 运行 `scripts/` 下的脚本即可。
+- 不要并行维护第二套依赖来源（例如同时提交 `requirements.txt`）。两套并存时锁文件不再代表真实环境。
+- 选择理由：`uv` 用一个工具覆盖解释器版本、依赖解析与锁定、虚拟环境管理，并能产出可提交的 `uv.lock`，比 `pip` 加手工维护的 `requirements.txt` 更易复现。若后续发现 `uv` 无法满足需要，应在 PR 中记录原因后**整体切换**，而不是混用两套。
+
 ## Pull Request 格式
 
 - **关联任务**：例如 `M1-11`。
@@ -62,6 +72,8 @@ python -m unittest discover -s tests -p 'test_download_public_data.py' -v
 ## 数据和安全
 
 - **不要**上传客户隐私、设备访问凭据、企业内部维修工单、ABB 完整官方 PDF 或任何未获许可的文件。
+- 发现凭据或受限内容已经进入仓库时，不要先删文件了事：按 [SECURITY.md](SECURITY.md) 的处置流程先轮换凭据，再清理历史并补门禁。
+- 安全漏洞与数据泄漏**不要**用公开 Issue 报告，改用 SECURITY.md 中的私有渠道。
 - 所有用于演示的虚构数据统一标注 `synthetic=true`；未经审核的标注不能写“专家认证”。
 - GraphRAG 关系必须可定位到原始证据；`confirmed_cause` 仅限已确认的历史事件，不自动等于当前设备确诊。
 - PR 不得把 `data/evaluation/` 或人工 gold labels 加入检索索引。
