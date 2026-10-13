@@ -1,4 +1,10 @@
-"""Regression checks for the M0-08 sensitive-file gate."""
+"""Regression checks for the M0-08 sensitive-file gate.
+
+The fixtures below are assembled from fragments at runtime instead of being
+written as literals. That keeps this file clean under the scanner it tests, so
+`find_issues()` over the whole repository stays empty. A gate that cannot pass
+on the repository containing its own tests is not a gate.
+"""
 
 import tempfile
 import unittest
@@ -12,6 +18,17 @@ from scripts.check_sensitive_files import (
     find_issues,
     is_placeholder,
 )
+
+
+FAKE_AWS_KEY = "AKIA" + "IOSFODNN7" + "EXAMPLE"
+FAKE_GITHUB_TOKEN = "ghp_" + "a" * 36
+FAKE_PRIVATE_KEY_HEADER = "-----BEGIN RSA " + "PRIVATE KEY-----"
+FAKE_PASSWORD = "hunter2" + "supersecret"
+FAKE_SETTING = "DB_" + "PASSWORD"
+
+
+def fake_assignment(indent=""):
+    return f'{indent}{FAKE_SETTING} = "{FAKE_PASSWORD}"\n'
 
 
 class ForbiddenPathTests(unittest.TestCase):
@@ -46,12 +63,12 @@ class ForbiddenPathTests(unittest.TestCase):
 
 class SecretContentTests(unittest.TestCase):
     def test_cloud_credentials_are_rejected(self):
-        self.assertTrue(check_text("notes.md", "key = AKIAIOSFODNN7EXAMPLE"))
-        self.assertTrue(check_text("notes.md", "ghp_" + "a" * 36))
-        self.assertTrue(check_text("notes.md", "-----BEGIN RSA PRIVATE KEY-----"))
+        self.assertTrue(check_text("notes.md", f"key = {FAKE_AWS_KEY}"))
+        self.assertTrue(check_text("notes.md", FAKE_GITHUB_TOKEN))
+        self.assertTrue(check_text("notes.md", FAKE_PRIVATE_KEY_HEADER))
 
     def test_non_placeholder_assignment_is_rejected(self):
-        self.assertTrue(check_text("config.py", 'DB_PASSWORD = "hunter2supersecret"'))
+        self.assertTrue(check_text("config.py", fake_assignment()))
 
     def test_placeholder_assignment_is_allowed(self):
         for value in ("", "${DB_PASSWORD}", "<your-password>", "changeme", "placeholder-value"):
@@ -59,7 +76,13 @@ class SecretContentTests(unittest.TestCase):
                 self.assertFalse(check_text("config.py", f"DB_PASSWORD={value}"))
 
     def test_empty_env_values_are_allowed(self):
-        self.assertFalse(check_text(".env.example", "POSTGRES_PASSWORD=\nNEO4J_PASSWORD=\n"))
+        template = "POSTGRES_PASSWORD=" + "\n" + "NEO4J_PASSWORD=" + "\n"
+        self.assertFalse(check_text(".env.example", template))
+
+    def test_escaped_newline_does_not_extend_a_value(self):
+        # "PASSWORD=\nNEXT=..." must not read the escape sequence as a value.
+        text = "DB_PASSWORD=" + "\\" + "nNEO4J_PASSWORD=" + "\\" + "n"
+        self.assertFalse(check_text("config.py", text))
 
     def test_ci_keyword_is_not_a_secret(self):
         # actions/checkout uses this field; "credentials: false" is not a secret.
@@ -71,6 +94,7 @@ class SecretContentTests(unittest.TestCase):
 
     def test_placeholder_helper_matches_documented_markers(self):
         self.assertTrue(is_placeholder("${POSTGRES_PASSWORD}"))
+        self.assertTrue(is_placeholder("changeme"))
         self.assertFalse(is_placeholder("s3cret-value-abcdefgh"))
 
 
@@ -94,11 +118,23 @@ class FindingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             payload = root / "logo.bin"
-            payload.write_bytes(b"\x00AKIAIOSFODNN7EXAMPLE")
+            payload.write_bytes(b"\x00" + FAKE_AWS_KEY.encode("utf-8"))
             self.assertEqual(find_issues(root=root, files=["logo.bin"], ignore_rules=False), [])
+
+    def test_secret_literal_in_a_tracked_file_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            leak = root / "settings.py"
+            leak.write_text(fake_assignment(), encoding="utf-8")
+            issues = find_issues(root=root, files=["settings.py"], ignore_rules=False)
+            self.assertTrue(any("DB_PASSWORD" in issue for issue in issues))
 
     def test_ignore_rules_cover_local_data_in_this_repository(self):
         self.assertEqual(check_ignore_rules(), [])
+
+    def test_repository_tracked_files_are_clean(self):
+        # The gate must pass on the repository that ships it, tests included.
+        self.assertEqual(find_issues(), [])
 
 
 if __name__ == "__main__":

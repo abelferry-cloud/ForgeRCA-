@@ -70,7 +70,9 @@ SECRET_PATTERNS = (
 SECRET_NAME_RE = re.compile(
     r"(?P<name>[A-Za-z0-9_]*(?:password|passwd|secret|token|api[_-]?key"
     r"|access[_-]?key|private[_-]?key|credential)[A-Za-z0-9_]*)"
-    r"\s*[:=]\s*[\"']?(?P<value>[^\s\"'#]+)",
+    # A backslash ends the value: "\n" and "\t" are escape sequences in source
+    # code, not credential material, and matching across them over-reports.
+    r"\s*[:=]\s*[\"']?(?P<value>[^\s\"'#\\]+)",
     re.IGNORECASE,
 )
 
