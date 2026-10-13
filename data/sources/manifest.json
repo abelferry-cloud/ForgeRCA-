@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "sources": [
     {
       "id": "ABB-FW-H-ZH",
@@ -9,6 +9,7 @@
       "revision": "H",
       "language": "zh-CN",
       "effective_date": "2024-03-30",
+      "models": ["ACS580-01"],
       "firmware_scope": "ASCKX 2.16",
       "url": "https://library.e.abb.com/public/2aca7fc08722463ca4969d62ae69893e/3AXD50000016430_ZH_ACS580_FW_H_A5.pdf",
       "local_path": "data/raw/abb/acs580-firmware-h-zh.pdf",
@@ -35,6 +36,7 @@
       "revision": "D",
       "language": "zh-CN",
       "effective_date": "2023-02-07",
+      "models": ["ACS580-01"],
       "firmware_scope": null,
       "url": "https://library.e.abb.com/public/e583e1b3d0444f1785df2b8330fd3498/ZH_ACS580-01_HW_D_A5.pdf",
       "local_path": "data/raw/abb/acs580-01-hardware-d-zh.pdf",
@@ -47,6 +49,7 @@
       "verified_pdf_pages": [
         3,
         25,
+        28,
         152
       ]
     }

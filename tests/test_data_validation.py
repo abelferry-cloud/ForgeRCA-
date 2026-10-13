@@ -66,9 +66,108 @@ class DataValidationTests(unittest.TestCase):
             validate(self.data)
 
     def test_unsupported_firmware_is_rejected(self):
-        self.data["evaluations"]["dev"][0]["firmware_version"] = "unknown"
+        self.data["evaluations"]["dev"][0]["firmware_version"] = "ASCKX 0.00"
         with self.assertRaisesRegex(ValueError, "Unsupported firmware"):
             validate(self.data)
+
+    def test_mismatched_firmware_is_rejected_for_insufficient_question(self):
+        self.data["evaluations"]["dev"][8]["firmware_version"] = "ASCKX 0.00"
+        with self.assertRaisesRegex(ValueError, "Unsupported firmware: Q009 K001"):
+            validate(self.data)
+
+    def test_unknown_question_firmware_cannot_support_diagnosis(self):
+        self.data["evaluations"]["dev"][0]["firmware_version"] = None
+        with self.assertRaisesRegex(ValueError, "Unknown firmware: Q001 K001"):
+            validate(self.data)
+
+    def test_unknown_history_firmware_cannot_support_diagnosis(self):
+        self.data["corpus"]["work_order"][0]["firmware_version"] = None
+        for alarm in self.data["corpus"]["alarm"]:
+            if alarm["work_order_id"] == "WO001":
+                alarm["firmware_version"] = None
+        with self.assertRaisesRegex(ValueError, "Unknown firmware: Q001 WO001"):
+            validate(self.data)
+
+    def test_unknown_firmware_can_explain_insufficient_question(self):
+        question = self.data["evaluations"]["dev"][11]
+        self.assertIsNone(question["firmware_version"])
+        self.assertEqual(question["gold_evidence_ids"], ["K008"])
+        self.assertEqual(validate(self.data)["questions"], 17)
+
+    def test_unrestricted_hardware_note_allows_unknown_firmware(self):
+        question = self.data["evaluations"]["dev"][5]
+        question["firmware_version"] = None
+        question["gold_evidence_ids"] = ["K007"]
+        self.assertEqual(validate(self.data)["questions"], 17)
+
+    def test_invalid_firmware_values_are_not_treated_as_matches(self):
+        for value in ("unknown", "", "H", False, 2.16):
+            with self.subTest(value=value):
+                data = deepcopy(self.seed)
+                data["evaluations"]["dev"][0]["firmware_version"] = value
+                data["evaluations"]["dev"][0]["gold_evidence_ids"] = ["WO001"]
+                data["corpus"]["work_order"][0]["firmware_version"] = value
+                for alarm in data["corpus"]["alarm"]:
+                    if alarm["work_order_id"] == "WO001":
+                        alarm["firmware_version"] = value
+                with self.assertRaisesRegex(ValueError, "Invalid firmware"):
+                    validate(data)
+
+    def test_note_model_must_belong_to_source(self):
+        note = deepcopy(self.data["corpus"]["knowledge_note"][7])
+        note.update(id="K010", model="SIM-OTHER-DRIVE")
+        self.data["corpus"]["knowledge_note"].append(note)
+        with self.assertRaisesRegex(ValueError, "Source model mismatch: K010"):
+            validate(self.data)
+
+    def test_source_models_must_be_explicit(self):
+        for models in ([], "ACS580-01", [""], [None], ["ACS580-01", "ACS580-01"]):
+            with self.subTest(models=models):
+                self.data["sources"][0]["models"] = models
+                with self.assertRaisesRegex(ValueError, "Invalid source models"):
+                    validate(self.data)
+
+    def test_revision_and_firmware_scope_must_match_source(self):
+        for field, value, message in (
+            ("document_revision", "ASCKX 2.16", "Revision mismatch"),
+            ("firmware_scope", "ASCKX 0.00", "Firmware scope mismatch"),
+            ("firmware_scope", None, "Firmware scope mismatch"),
+        ):
+            with self.subTest(field=field, value=value):
+                data = deepcopy(self.seed)
+                data["corpus"]["knowledge_note"][0][field] = value
+                with self.assertRaisesRegex(ValueError, message):
+                    validate(data)
+
+    def test_locator_page_and_text_are_validated(self):
+        for field, value, message in (
+            ("pdf_page", 536.0, "Invalid PDF page"),
+            ("pdf_page", True, "Invalid PDF page"),
+            ("pdf_page", 535, "Unverified PDF page"),
+            ("printed_page", "   ", "Incomplete locator"),
+            ("section", "   ", "Incomplete locator"),
+        ):
+            with self.subTest(field=field, value=value):
+                data = deepcopy(self.seed)
+                data["corpus"]["knowledge_note"][0]["locator"][field] = value
+                with self.assertRaisesRegex(ValueError, message):
+                    validate(data)
+
+    def test_question_model_and_status_must_agree(self):
+        for model, status in (("SIM-OTHER-DRIVE", "insufficient"), ("ACS580-01", "out_of_scope")):
+            with self.subTest(model=model, status=status):
+                data = deepcopy(self.seed)
+                question = data["evaluations"]["dev"][10]
+                question.update(model=model, expected_status=status)
+                with self.assertRaisesRegex(ValueError, "Model/status mismatch"):
+                    validate(data)
+
+    def test_missing_model_is_not_an_out_of_scope_model(self):
+        for model in (None, "", "   "):
+            with self.subTest(model=model):
+                self.data["evaluations"]["dev"][10]["model"] = model
+                with self.assertRaisesRegex(ValueError, "Invalid question model"):
+                    validate(self.data)
 
     def test_raw_hash_mismatch_and_path_escape_are_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
