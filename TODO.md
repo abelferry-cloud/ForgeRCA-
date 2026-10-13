@@ -35,7 +35,7 @@
 - [x] **M0-05 · P0** 在本地运行 `python -m unittest discover -s tests -v`，记录 Python 版本和测试摘要。*(PR #3 已记录通过)*
 - [ ] **M0-06 · P0** 对 9 条知识注释、8 条合成工单及 5 条 demo 场景进行至少一次人工领域核对；记录审核人、日期、变更。*([待填写的逐条审核清单](docs/reviews/seed-v0.2-human-review.md) 已备好)*
 - [ ] **M0-07 · P1** GitHub 仓库 About、topics、description、homepage 与 Issue / PR 模板完善。
-- [ ] **M0-08 · P1** 确认 CI 在 PR 与默认分支运行：离线数据校验、unittest、敏感文件扫描。
+- [x] **M0-08 · P1** 确认 CI 在 PR 与默认分支运行：离线数据校验、unittest、敏感文件扫描。*(2026-10-13 新增 `scripts/check_sensitive_files.py` 并接入 `.github/workflows/validate.yml`；触发条件为 `push` 与 `pull_request`，覆盖 `main` 与 PR)*
 - [x] **M0-09 · P1** 已确立分支管理：`main` 为唯一稳定主线并设为默认分支；**禁止直接向 `main` 提交**，改动一律从 `main` 切出功能分支走 PR，仅错别字、失效链接等极小改动或经维护者明确允许可直接提交。命名前缀 `feat/` `fix/` `docs/` `chore/` `data/`，建议携带任务 ID。详见 `CONTRIBUTING.md`《分支与合并规范》。*(2026-10-13)*
 - [ ] **M0-10 · P1** 建立 `.env.example`（只提供非机密参数名），核实 `.gitignore` 忽略 `.env`、密钥、数据库卷和原始 PDF。
 - [ ] **M0-11 · P1** 新增 `SECURITY.md`（漏洞报告路径与安全边界），定义数据泄漏排查流程。

@@ -92,6 +92,9 @@ cd ForgeRCA-
 # 校验仓库已提供的种子工单、告警、证据映射和数据划分
 python scripts/validate_data.py
 python -m unittest discover -s tests -v
+
+# 确认没有凭据、厂商原文或本地索引被纳入跟踪文件
+python scripts/check_sensitive_files.py
 ```
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
@@ -155,6 +158,7 @@ ForgeRCA-/
 │   └── raw/                    # 私有 / 第三方原始数据；Git 忽略
 ├── scripts/
 │   ├── validate_data.py        # 已有离线数据完整性校验
+│   ├── check_sensitive_files.py # 已有敏感文件 / 凭据扫描（CI 门禁）
 │   ├── download_sources.py     # 已有 ABB 官方 PDF 下载器
 │   └── download_public_data.py # 新增独立研究数据下载器
 └── tests/                      # 原有数据校验测试 + 新下载器测试

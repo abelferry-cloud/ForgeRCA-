@@ -38,6 +38,7 @@
 
 ```bash
 python scripts/validate_data.py
+python scripts/check_sensitive_files.py
 python -m unittest discover -s tests -v
 
 # 仅在已下载且拥有对应固定版本的 ABB 官方 PDF 时执行
