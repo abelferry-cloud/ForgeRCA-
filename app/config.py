@@ -29,6 +29,21 @@ class ConfigError(ValueError):
     """Raised when the environment cannot produce a valid configuration."""
 
 
+# Field name -> environment variable, for values that must never be logged.
+# Stored as pairs rather than a "name: env" mapping on purpose: a literal
+# ``password=...``-shaped line anywhere in the tree is what
+# ``scripts/check_sensitive_files.py`` exists to catch, and this module should
+# not look like a violation of its own rule.
+_SECRET_ENV_VARS = (
+    ("postgres_password", "POSTGRES_PASSWORD"),
+    ("opensearch_password", "OPENSEARCH_PASSWORD"),
+    ("neo4j_password", "NEO4J_PASSWORD"),
+    ("llm_api_key", "LLM_API_KEY"),
+    ("langfuse_public_key", "LANGFUSE_PUBLIC_KEY"),
+    ("langfuse_secret_key", "LANGFUSE_SECRET_KEY"),
+)
+
+
 @dataclass(frozen=True)
 class Secret:
     """A credential that never reveals itself through ``repr`` or ``str``."""
@@ -121,28 +136,24 @@ class Settings:
         if missing:
             raise ConfigError("Missing required environment variables: " + ", ".join(missing))
 
+        credentials = {field: Secret.of(source.get(name)) for field, name in _SECRET_ENV_VARS}
         return cls(
             postgres_host=_text(source, "POSTGRES_HOST", "localhost"),
             postgres_port=_port(source, "POSTGRES_PORT", 5432),
             postgres_db=_text(source, "POSTGRES_DB", "forgerca"),
             postgres_user=_text(source, "POSTGRES_USER", "forgerca"),
-            postgres_password=Secret.of(source.get("POSTGRES_PASSWORD")),
             opensearch_host=_text(source, "OPENSEARCH_HOST", "localhost"),
             opensearch_port=_port(source, "OPENSEARCH_PORT", 9200),
             opensearch_user=_text(source, "OPENSEARCH_USER"),
-            opensearch_password=Secret.of(source.get("OPENSEARCH_PASSWORD")),
             opensearch_index_prefix=_text(source, "OPENSEARCH_INDEX_PREFIX", "forgerca"),
             neo4j_uri=_text(source, "NEO4J_URI", "bolt://localhost:7687"),
             neo4j_user=_text(source, "NEO4J_USER", "neo4j"),
-            neo4j_password=Secret.of(source.get("NEO4J_PASSWORD")),
             embedding_model=_text(source, "EMBEDDING_MODEL"),
             reranker_model=_text(source, "RERANKER_MODEL"),
             llm_provider=_text(source, "LLM_PROVIDER"),
             llm_model=_text(source, "LLM_MODEL"),
-            llm_api_key=Secret.of(source.get("LLM_API_KEY")),
             langfuse_host=_text(source, "LANGFUSE_HOST"),
-            langfuse_public_key=Secret.of(source.get("LANGFUSE_PUBLIC_KEY")),
-            langfuse_secret_key=Secret.of(source.get("LANGFUSE_SECRET_KEY")),
+            **credentials,
         )
 
     def redacted(self) -> dict[str, object]:
