@@ -149,7 +149,8 @@ ForgeRCA-/
 │   ├── knowledge-graph.md      # 图谱规范（已存在）
 │   ├── evaluation.md           # 评测设计（已存在）
 │   ├── demo-and-milestones.md  # 演示与阶段完成标准（已存在）
-│   └── public-datasets.md      # 可选外部研究数据 / 许可 / 下载
+│   ├── public-datasets.md      # 可选外部研究数据 / 许可 / 实测校验 / 数据卡
+│   └── data-card-template.md   # 数据卡模板（M0-22）
 ├── data/
 │   ├── sources/                # ABB 来源清单与文档指纹（已存在）
 │   ├── corpus/                 # 人工编写知识注释 / 合成工单、告警（已存在）
@@ -159,9 +160,10 @@ ForgeRCA-/
 ├── scripts/
 │   ├── validate_data.py        # 已有离线数据完整性校验
 │   ├── check_sensitive_files.py # 已有敏感文件 / 凭据扫描（CI 门禁）
+│   ├── corpus_allowlist.py     # 唯一允许进入检索索引的语料 allowlist（M0-21）
 │   ├── download_sources.py     # 已有 ABB 官方 PDF 下载器
 │   └── download_public_data.py # 新增独立研究数据下载器
-└── tests/                      # 原有数据校验测试 + 新下载器测试
+└── tests/                      # 原有数据校验测试 + 新下载器 / 索引隔离测试
 ```
 
 ## 📊 评测与结果透明度
@@ -180,7 +182,7 @@ ForgeRCA-/
 
 | 阶段 | 工作重点 | 主要产物 | 状态 |
 | --- | --- | --- | --- |
-| M0 | 来源锁定、合成种子数据、数据校验和文档 | `data/`, `docs/`, 初始化脚本 | 🟡 已有初稿，待人工复核 |
+| M0 | 来源锁定、合成种子数据、数据校验和文档 | `data/`, `docs/`, 初始化脚本 | 🟡 工程与数据项完成（22/23），仅待人工复核 |
 | M1 | PDF 解析、稳定锚点、Dense-only RAG | 可追溯最小 RAG | ⬜ 待实现 |
 | M2 | BM25 + Dense + RRF + BGE-Reranker | 混合检索与版本过滤 | ⬜ 待实现 |
 | M3 | 信息抽取、实体消歧、图谱证据追溯 | Neo4j GraphRAG | ⬜ 待实现 |

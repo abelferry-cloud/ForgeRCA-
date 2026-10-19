@@ -9,7 +9,7 @@
 - `data/corpus/knowledge.jsonl`：项目编写的简短事实注释或合成干扰规则；带原始 PDF 页码的注释不是逐字原文，也不是厂商发布的独立文件。
 - `data/corpus/work_orders.jsonl`：虚构历史维修事件。
 - `data/corpus/alarms.jsonl`：与历史工单关联的虚构告警事件。
-- `data/evaluation/`：输入、根因和证据标注。任何索引过程都必须显式排除此目录。
+- `data/evaluation/`：输入、根因和证据标注。任何索引过程都必须显式排除此目录。唯一允许的语料入口是 `scripts/corpus_allowlist.py` 的显式 allowlist（`indexable_files()` / `assert_indexable()`）：构建器不得用目录递归（如 `rglob("*.jsonl")`）生成索引，路径必须逐个通过 allowlist 校验。该边界由 `tests/test_corpus_isolation.py` 守护。
 - `data/graph/reference.json`：用于校验抽取的手工实体和关系；不得直接当作 LLM 抽取成果。
 - `docs/reviews/`：人工审核材料，含评测答案与审核意见，禁止作为检索语料。
 

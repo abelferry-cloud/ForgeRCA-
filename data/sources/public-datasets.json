@@ -1,7 +1,8 @@
 {
-  "schema_version": 1,
-  "checked_on": "2026-10-13",
+  "schema_version": 2,
+  "checked_on": "2026-10-19",
   "policy": "External public datasets are optional independent research inputs; do not mix into ABB synthetic events without separate evidence and provenance review.",
+  "verified_snapshot_note": "verified_snapshot records the copy this project actually downloaded and checked on checked_on. It is evidence of a specific verification, not a permanent upstream pin: if the provider updates the file, re-run the downloader with --force and add a new snapshot instead of editing this one.",
   "datasets": [
     {
       "key": "maintie-gold",
@@ -10,7 +11,20 @@
       "license": "MIT (upstream repository statement)",
       "landing_page": "https://github.com/nlp-tlp/maintie",
       "download_url": "https://raw.githubusercontent.com/nlp-tlp/maintie/main/data/gold_release.json",
-      "may_be_merged_into_abb_corpus": false
+      "may_be_merged_into_abb_corpus": false,
+      "verified_snapshot": {
+        "checked_on": "2026-10-19",
+        "downloaded_at_utc": "2026-10-19T06:07:19.097778+00:00",
+        "file_name": "gold_release.json",
+        "bytes": 817880,
+        "sha256": "ef811cf4ffd0c90e6a13b1369e24e9d1d08f9a294d873ab4fb1a580096d7d6e0",
+        "records": 1076,
+        "entities": 3397,
+        "relations": 2341,
+        "entity_types": 155,
+        "relation_types": 6,
+        "verification": "downloaded_and_structure_checked"
+      }
     },
     {
       "key": "maintie-silver",
@@ -29,7 +43,19 @@
       "doi": "10.24432/C5HS5C",
       "landing_page": "https://archive.ics.uci.edu/dataset/601/ai4i+2020+predictive+maintenance+dataset",
       "download_url": "https://archive.ics.uci.edu/static/public/601/ai4i%2B2020%2Bpredictive%2Bmaintenance%2Bdataset.zip",
-      "may_be_merged_into_abb_corpus": false
+      "may_be_merged_into_abb_corpus": false,
+      "verified_snapshot": {
+        "checked_on": "2026-10-19",
+        "downloaded_at_utc": "2026-10-19T06:07:23.726501+00:00",
+        "file_name": "ai4i2020.csv",
+        "archive_sha256": "f601f14294bcf190f9d720676b7f0aea46a26cde9ab8ebc7b4f8174d9d26b252",
+        "bytes": 522170,
+        "sha256": "dc6630cd9b1f0f853922fad78a1b6436570d3f1ec863f1dd5c4340ac56bc8a8e",
+        "rows": 10000,
+        "columns": 14,
+        "positive_failure_rows": 339,
+        "verification": "downloaded_extracted_and_structure_checked"
+      }
     },
     {
       "key": "metropt3",
