@@ -159,6 +159,12 @@ ForgeRCA-/
 │   ├── demo-and-milestones.md  # 演示与阶段完成标准（已存在）
 │   ├── public-datasets.md      # 可选外部研究数据 / 许可 / 实测校验 / 数据卡
 │   └── data-card-template.md   # 数据卡模板（M0-22）
+├── app/                        # 应用分层（M1-02 建立，按里程碑逐层填充）
+│   ├── ingestion/              # PDF 解析、切分与稳定证据锚点
+│   ├── retrieval/              # 查询归一、检索与融合
+│   ├── db/                     # 持久化与迁移
+│   ├── api/                    # HTTP 边界，路由保持薄
+│   └── schemas/                # 共享数据契约
 ├── data/
 │   ├── sources/                # ABB 来源清单与文档指纹（已存在）
 │   ├── corpus/                 # 人工编写知识注释 / 合成工单、告警（已存在）
