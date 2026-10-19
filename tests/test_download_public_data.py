@@ -86,5 +86,26 @@ class DownloadPublicDataTests(unittest.TestCase):
             self.assertFalse((Path(temp) / "maintie-gold" / "gold_release.json").exists())
 
 
+    def test_catalog_records_verified_snapshots(self):
+        """M0-20: the committed snapshot is the only public record of a verified download."""
+        items = downloader.load_catalog()
+        for key in ("maintie-gold", "ai4i"):
+            with self.subTest(key=key):
+                snapshot = items[key].get("verified_snapshot")
+                self.assertIsInstance(snapshot, dict)
+                self.assertRegex(snapshot["sha256"], r"^[0-9a-f]{64}$")
+                self.assertRegex(snapshot["checked_on"], r"^\d{4}-\d{2}-\d{2}$")
+                self.assertTrue(snapshot["downloaded_at_utc"].endswith("+00:00"))
+                self.assertGreater(snapshot["bytes"], 0)
+                self.assertGreater(snapshot["records"] if "records" in snapshot else snapshot["rows"], 0)
+                self.assertEqual(snapshot["file_name"], downloader.OUTPUT_NAMES[key])
+                self.assertFalse(items[key]["may_be_merged_into_abb_corpus"])
+
+    def test_unverified_catalog_entries_claim_no_snapshot(self):
+        items = downloader.load_catalog()
+        for key in ("maintie-silver", "metropt3"):
+            self.assertNotIn("verified_snapshot", items[key], key)
+
+
 if __name__ == "__main__":
     unittest.main()

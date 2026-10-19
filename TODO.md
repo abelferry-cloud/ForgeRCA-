@@ -1,6 +1,6 @@
 # ForgeRCA · Engineering TODO / Roadmap
 
-> **版本**：v0.4.1（2026-10-13） · **当前**：M0 的**工程杂项**已收口（仓库名锁定 `ForgeRCA-`、Apache-2.0、`main` 主线与分支保护、CI 三门禁、`.env.example`、`SECURITY.md`、Issue/PR 模板），M0-07/08/10/11/12/23 已完成；M0-14/M0-15/M0-16 经逐条核实后勾选。但 **M0 整体尚未收口**：M0-06 人工复核按其定义不能由 AI 代劳；M0-17～M0-22 为数据与来源管理项，尚未完成或未经核实。M1–M5 为计划。  
+> **版本**：v0.5.0（2026-10-19） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。M1–M5 为计划。  
 > **首期设备**：ABB ACS580-01（沿用仓库现有来源清单和数据协议）；后续多品牌扩展单独列入 Backlog。  
 > 本清单是**工作计划，不代表实际已完成**。以下默认任务未勾选；可在 GitHub PR 验收后逐项勾选。
 
@@ -15,7 +15,7 @@
 
 | 里程碑 | 目标 | 依赖 | 当前状态 |
 | --- | --- | --- | --- |
-| **M0** | 数据/文档/安全基线 | 无 | 工程杂项已收口（分支保护 + CI 三门禁 + 安全文档）；M0-06 人工复核与 M0-17～M0-22 数据项未完成 |
+| **M0** | 数据/文档/安全基线 | 无 | 工程与数据项已完成（22/23）；仅 M0-06 人工领域复核待签署 |
 | **M1** | 基础 Dense RAG 与可信引用 | M0 | 未开始 |
 | **M2** | 混合检索 + 版本过滤 + Reranker | M1 | 未开始 |
 | **M3** | 证据约束的 Neo4j GraphRAG | M1/M2 | 未开始 |
@@ -47,15 +47,17 @@
 - [x] **M0-14 · P0** 对设备型号、固件版本、文档修订定义三套独立字段；补全 `firmware_scope` 适用性逻辑和“未知”分支。*([PR #5](https://github.com/abelferry-cloud/ForgeRCA-/pull/5) 已合并：来源清单升为 schema 0.2 并新增已核验 `models`；校验器区分“明确不匹配 / 未知 / 明确不按固件限定”三态，未知固件只允许用于 `insufficient` 场景的限制说明，明确不匹配一律拒绝；固件字段格式受 `ASCKX x.y` 约束)*
 - [x] **M0-15 · P0** 为每个注释确认 `source_id + pdf_page + locator` 可指向指定 PDF 的实际信息，修复不可追溯项。*([PR #5](https://github.com/abelferry-cloud/ForgeRCA-/pull/5) 已合并：`validate_data.py` 强制 `source_id` 必须存在、`pdf_page` 落在来源总页数内**且属于 `manifest.json` 的 `verified_pdf_pages` 白名单**、`printed_page`/`section` 非空。**边界**：以上只证明锚点在结构上可解析到已核验页面；“该页内容确实支持这条注释”属语义判断，仍在 M0-06 人工复核范围内，未在此项宣称完成)*
 - [x] **M0-16 · P0** 在 `data/raw/` 与 `data/processed/` 保持原始数据不入 Git；记录来源许可证与归属。*(2026-10-13 核实：二者均在 `.gitignore` 中，且由 `scripts/check_sensitive_files.py` 的忽略规则回归检查持续守护——本地已下载的两份 PDF 不入库；来源许可与归属记录在 [来源说明](data/sources/README.md)《发布边界》（`redistribution=not_verified`）与 README《许可、来源与安全边界》)*
-- [ ] **M0-17 · P1** 验证可选下载脚本：`python scripts/download_public_data.py --list` / `--dataset maintie-gold`；下载失败须输出清楚的错误。
-- [ ] **M0-18 · P1** 下载 MaintIE gold 后验证 JSON 的 tokens/entities/relations，作为**独立**信息抽取数据集。
-- [ ] **M0-19 · P1** 下载 AI4I 后确认是合成的预测性维护表格数据，仅用于扩展情境，不赋予 ABB 工单 ID。
-- [ ] **M0-20 · P1** 编写第三方数据署名、版本、URL、下载时间、SHA-256、用途和禁止混用说明。
-- [ ] **M0-21 · P1** 确保 `data/evaluation/` 永不被数据构建器递归扫描；设置显式 allowlist 测试。
-- [ ] **M0-22 · P2** 制定数据卡模板：来源、字段、规模、合成标记、授权、已知偏差、标注状态、预处理版本。
+- [x] **M0-17 · P1** 验证可选下载脚本：`python scripts/download_public_data.py --list` / `--dataset maintie-gold`；下载失败须输出清楚的错误。*(2026-10-19 实测：`--list` 离线执行、返回 0 且不发起网络请求；`--dataset maintie-gold` 成功写入 `data/raw/public/maintie-gold/`（817,880 字节，SHA-256 `ef811cf4…d7d6e0`）。失败路径覆盖非白名单 URL、超体积、损坏响应与哈希不符，错误以 `Download/validation failed: …` 输出到 stderr 并返回 1，见 `tests/test_download_public_data.py`)*
+- [x] **M0-18 · P1** 下载 MaintIE gold 后验证 JSON 的 tokens/entities/relations，作为**独立**信息抽取数据集。*(2026-10-19 实测：1,076 条记录、3,397 实体、2,341 关系、155 类层级实体、6 类关系；实体 `start/end` 为 token 下标且全部通过越界检查，按 token 复原的片段与原文一致；**关系的 `head`/`tail` 是 `entities` 数组下标而非 token 偏移**，该结论已写入 [公开数据指引](docs/public-datasets.md)，供 M3-12 使用。数据仍属独立数据集，未混入 ABB 语料)*
+- [x] **M0-19 · P1** 下载 AI4I 后确认是合成的预测性维护表格数据，仅用于扩展情境，不赋予 ABB 工单 ID。*(2026-10-19 实测：10,000 行 × 14 列，`UDI` 为 1–10,000 连续唯一整数，`Machine failure=1` 339 行（TWF 46 / HDF 115 / PWF 95 / OSF 98 / RNF 19）；无 `WO`、`ABB` 或任何工单编号字段；上游声明为合成数据，本项目未为其生成 ABB 工单 ID，也未映射到 ABB 故障码)*
+- [x] **M0-20 · P1** 编写第三方数据署名、版本、URL、下载时间、SHA-256、用途和禁止混用说明。*(2026-10-19：`data/sources/public-datasets.json` 升至 schema 2，为两份已下载数据写入机器可读 `verified_snapshot`（URL、下载 UTC 时间、归档/处理后 SHA-256、字节数、记录数）；[公开数据指引](docs/public-datasets.md) 增加实测结果、数据卡与「绝对不要」混用清单。快照代表一次具体核验，不是上游永久 pin，更新时新增条目而不覆盖)*
+- [x] **M0-21 · P1** 确保 `data/evaluation/` 永不被数据构建器递归扫描；设置显式 allowlist 测试。*(2026-10-19：新增 `scripts/corpus_allowlist.py` 作为唯一索引入口——`indexable_files()` 只返回 3 个显式列出的语料文件、不做目录扫描，`assert_indexable()` 拒绝 `data/evaluation/`、`data/graph/`、`docs/reviews/`、`data/raw/` 等前缀以及 `..` 路径穿越；`tests/test_corpus_isolation.py` 提供 7 项守护，其中一项实证 `rglob("*.jsonl")` 会扫到 dev/demo 标签，另一项锁定 `validate_data.py` 的 `CORPUS_FILES` 不得与该 allowlist 漂移)*
+- [x] **M0-22 · P2** 制定数据卡模板：来源、字段、规模、合成标记、授权、已知偏差、标注状态、预处理版本。*(2026-10-19：新增 [数据卡模板](docs/data-card-template.md)，含 10 个必填小节与完成检查清单，并要求写清「是否进入检索索引」与 allowlist 登记；MaintIE gold、AI4I 两张卡已按模板填写在 [公开数据指引](docs/public-datasets.md)，种子语料沿用既有 [数据卡](data/README.md))*
 - [x] **M0-23 · P1** 在 GitHub Settings → Branches 为 `main` 启用分支保护规则：禁止直接推送、要求经 PR 合并、要求 CI 检查通过。*(2026-10-13 已启用：要求经 PR 合并（批准数 0，适配单人维护）、必需状态检查 `validate`、禁止强推与分支删除、要求解决会话；`enforce_admins=false` 保留维护者的紧急通道，与 CONTRIBUTING 的例外条款一致。未开启 `strict`（不强制分支先同步 main），如需收紧可在仓库设置中打开)*
 
-2026-10-13 本地执行记录：M0-03、M0-04、M0-05、M0-13 的来源核验与测试结果见 [ABB PDF 核验记录](data/sources/verification-2026-10-13.md)，已随 PR #3 合并。M0-14、M0-15 的校验规则与逐条定位见 [数据规范](docs/data-spec.md) 和 [审核清单](docs/reviews/seed-v0.2-human-review.md)，已随 PR #5 合并并在 v0.4.1 核实后勾选。M0-16 于 v0.4.1 核实勾选。M0-06 人工领域复核仍未完成；M0-17～M0-22 尚未逐条核实。
+2026-10-13 本地执行记录：M0-03、M0-04、M0-05、M0-13 的来源核验与测试结果见 [ABB PDF 核验记录](data/sources/verification-2026-10-13.md)，已随 PR #3 合并。M0-14、M0-15 的校验规则与逐条定位见 [数据规范](docs/data-spec.md) 和 [审核清单](docs/reviews/seed-v0.2-human-review.md)，已随 PR #5 合并并在 v0.4.1 核实后勾选。M0-16 于 v0.4.1 核实勾选。
+
+2026-10-19 本地执行记录：M0-17～M0-22 完成。公开数据的下载命令、文件大小、完整 SHA-256、结构校验结论与数据卡见 [公开数据指引](docs/public-datasets.md)，机器可读快照见 [公开数据清单](data/sources/public-datasets.json)；索引隔离入口为 `scripts/corpus_allowlist.py`，守护测试为 `tests/test_corpus_isolation.py`。**M0-06 人工领域复核仍未完成**，它是 M0 唯一未勾选项。
 
 **M0 DoD**：新贡献者按 README 的现有命令可完成校验；每条种子事实都能追到真实页码或明确的合成记录；未来的第三方数据和盲测答案没有混入主语料；所有改动均经功能分支与 PR 进入 `main`，`main` 历史保持可校验。
 
