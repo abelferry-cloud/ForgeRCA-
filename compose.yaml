@@ -1,0 +1,97 @@
+# Local development services for ForgeRCA (M1-04).
+#
+# These containers are a development convenience, not a deployment:
+# every port is bound to 127.0.0.1, OpenSearch runs without its security
+# plugin, and credentials come from the ignored .env file. Do not expose this
+# stack to a network or copy these settings into anything shared.
+#
+#   cp .env.example .env      # then fill POSTGRES_PASSWORD and NEO4J_PASSWORD
+#   docker compose up -d
+#   docker compose ps         # wait until every service reports "healthy"
+#   docker compose down       # add -v to discard the data volumes
+#
+# Host ports are configurable through POSTGRES_PORT / OPENSEARCH_PORT /
+# NEO4J_HTTP_PORT / NEO4J_BOLT_PORT in .env.
+
+name: forgerca
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-forgerca}
+      POSTGRES_USER: ${POSTGRES_USER:-forgerca}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready only checks the socket; the query is what proves the
+      # configured database is reachable, not just the server process.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    environment:
+      discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      # Development only: no TLS, no authentication. The loopback binding
+      # above is what keeps this acceptable. M1-19 revisits authentication
+      # before any non-local use, and this must not reach a shared host.
+      DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "127.0.0.1:${OPENSEARCH_PORT:-9200}:9200"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5.26-community
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}
+      # cypher-shell reads these two. They must not start with NEO4J_, or the
+      # server would parse them as (invalid) configuration keys and refuse to
+      # start. Credentials in the container environment are a local-dev
+      # trade-off, not a pattern to reuse elsewhere.
+      HEALTH_USER: ${NEO4J_USER:-neo4j}
+      HEALTH_PASSWORD: ${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${NEO4J_HTTP_PORT:-7474}:7474"
+      - "127.0.0.1:${NEO4J_BOLT_PORT:-7687}:7687"
+    volumes:
+      - neo4j-data:/data
+    healthcheck:
+      # A TCP check would pass before the database accepts queries; run one.
+      test:
+        [
+          "CMD-SHELL",
+          "cypher-shell -u \"$$HEALTH_USER\" -p \"$$HEALTH_PASSWORD\" 'RETURN 1' > /dev/null || exit 1",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  opensearch-data:
+  neo4j-data:
