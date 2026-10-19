@@ -1,10 +1,10 @@
 """Regression checks for corrupt provenance and evaluation leakage."""
 
-from copy import deepcopy
 import hashlib
-from pathlib import Path
 import tempfile
 import unittest
+from copy import deepcopy
+from pathlib import Path
 
 from scripts.validate_data import check_raw, load_data, validate
 
@@ -175,7 +175,11 @@ class DataValidationTests(unittest.TestCase):
             path = root / "data/raw/abb/example.pdf"
             path.parent.mkdir(parents=True)
             path.write_bytes(b"%PDF-example")
-            source = {"local_path": "data/raw/abb/example.pdf", "bytes": path.stat().st_size, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+            source = {
+                "local_path": "data/raw/abb/example.pdf",
+                "bytes": path.stat().st_size,
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
             check_raw([source], root)
             source["sha256"] = "0" * 64
             with self.assertRaisesRegex(ValueError, "hash mismatch"):

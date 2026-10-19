@@ -1,0 +1,43 @@
+[project]
+name = "forgerca"
+version = "0.0.0"
+description = "Evidence-grounded industrial fault diagnosis (initialization stage)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+# No runtime dependencies yet. They arrive with the milestone that needs them
+# (M1-02 onward), so an empty list here is a fact, not a placeholder.
+dependencies = []
+
+[dependency-groups]
+# Development-only tooling. Runtime code must not import these.
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.9",
+]
+
+[tool.uv]
+# This repository is an application and a set of scripts, not a distributable
+# library: there is no build backend and nothing to install as a package.
+package = false
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = ["app", "scripts", "tests"]
+extend-exclude = ["data", "artifacts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "scripts"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+# Tests import the repository modules as `scripts.*`; keep the repository root
+# importable regardless of how pytest is launched.
+pythonpath = ["."]
+addopts = "-q"

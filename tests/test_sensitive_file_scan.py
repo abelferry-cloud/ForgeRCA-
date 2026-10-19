@@ -19,7 +19,6 @@ from scripts.check_sensitive_files import (
     is_placeholder,
 )
 
-
 FAKE_AWS_KEY = "AKIA" + "IOSFODNN7" + "EXAMPLE"
 FAKE_GITHUB_TOKEN = "ghp_" + "a" * 36
 FAKE_PRIVATE_KEY_HEADER = "-----BEGIN RSA " + "PRIVATE KEY-----"

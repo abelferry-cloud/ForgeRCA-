@@ -1,6 +1,6 @@
 # ForgeRCA · Engineering TODO / Roadmap
 
-> **版本**：v0.5.0（2026-10-19） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。M1–M5 为计划。  
+> **版本**：v0.5.1（2026-10-19） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。**M1 已启动**，M1-01 完成，其余按 TODO 顺序推进。  
 > **首期设备**：ABB ACS580-01（沿用仓库现有来源清单和数据协议）；后续多品牌扩展单独列入 Backlog。  
 > 本清单是**工作计划，不代表实际已完成**。以下默认任务未勾选；可在 GitHub PR 验收后逐项勾选。
 
@@ -16,7 +16,7 @@
 | 里程碑 | 目标 | 依赖 | 当前状态 |
 | --- | --- | --- | --- |
 | **M0** | 数据/文档/安全基线 | 无 | 工程与数据项已完成（22/23）；仅 M0-06 人工领域复核待签署 |
-| **M1** | 基础 Dense RAG 与可信引用 | M0 | 未开始 |
+| **M1** | 基础 Dense RAG 与可信引用 | M0 | 进行中（M1-01 完成） |
 | **M2** | 混合检索 + 版本过滤 + Reranker | M1 | 未开始 |
 | **M3** | 证据约束的 Neo4j GraphRAG | M1/M2 | 未开始 |
 | **M4** | LangGraph 动态补检与 Langfuse | M2/M3 | 未开始 |
@@ -67,7 +67,7 @@
 
 ### M1-A · 系统底座
 
-- [ ] **M1-01 · P0** 建立 `pyproject.toml`、开发/生产依赖分组、Python 最低版本和 Ruff / pytest 配置。
+- [x] **M1-01 · P0** 建立 `pyproject.toml`、开发/生产依赖分组、Python 最低版本和 Ruff / pytest 配置。*(2026-10-19：`pyproject.toml` 声明 `requires-python >=3.11`、运行时 `dependencies = []`（仍只用标准库）、`[dependency-groups] dev = pytest + ruff`、`[tool.uv] package = false`；Ruff `target-version=py311`、`line-length=120`、规则集 `E,F,W,I,B,UP`；pytest `testpaths=tests`、`pythonpath=["."]`（沿用 `scripts.*` 导入方式）。`uv.lock` 已提交（pytest 9.1.1 / ruff 0.17.1），`uv sync --frozen` 通过。实测：`uv run ruff check .` 无告警（含对既有 16 处超长行的折行）、`uv run pytest` 62 passed + 41 subtests。**CI 接入 lint 属 M5-14，本项未声称完成**)*
 - [ ] **M1-02 · P0** 建立 `app/` 分层：`ingestion/`, `retrieval/`, `db/`, `api/`, `schemas/`；保持路由不直接处理业务。
 - [ ] **M1-03 · P0** 建立配置模块：环境变量、类型检查、缺少必填项时失败、日志中的密钥脱敏。
 - [ ] **M1-04 · P0** 本地 Docker Compose 提供 PostgreSQL / OpenSearch / Neo4j；健康检查和端口可配置。

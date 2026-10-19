@@ -18,10 +18,9 @@ Checks performed:
 """
 
 import argparse
-from pathlib import Path
 import re
 import subprocess
-
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -197,7 +196,10 @@ def find_issues(root=ROOT, files=None, ignore_rules=True):
             issues.extend(f"{relative}: {reason}" for reason in reasons)
             continue
         if target.stat().st_size > MAX_TRACKED_BYTES:
-            issues.append(f"{relative}: {target.stat().st_size} bytes exceeds the {MAX_TRACKED_BYTES} byte tracked-file limit")
+            issues.append(
+                f"{relative}: {target.stat().st_size} bytes exceeds "
+                f"the {MAX_TRACKED_BYTES} byte tracked-file limit"
+            )
         if reasons:
             issues.extend(f"{relative}: {reason}" for reason in reasons)
             continue

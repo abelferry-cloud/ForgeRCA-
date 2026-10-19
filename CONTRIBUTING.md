@@ -46,6 +46,10 @@ python scripts/validate_data.py --check-raw
 
 # 新增公开数据下载器的离线测试
 python -m unittest discover -s tests -p 'test_download_public_data.py' -v
+
+# 改动 Python 代码时（M1-01 起；需要先 uv sync）
+uv run ruff check .
+uv run pytest
 ```
 
 如果修改了新引入的构建依赖，请记录锁文件、Python 版本、复现命令和运行结果。当前不应假定 FastAPI / Neo4j / LangGraph 服务已可运行。
@@ -54,9 +58,10 @@ python -m unittest discover -s tests -p 'test_download_public_data.py' -v
 
 **选定方案：`uv`（Python 3.11+）。** 决策记录于 M0-12，日期 2026-10-13。
 
-- 初始化脚本与离线校验只使用标准库，因此**当前没有第三方运行依赖，也没有锁文件**。在 M1 引入第一个依赖之前，不预先生成 `uv.lock`，也不在 `pyproject.toml` 中写入未经安装验证的依赖项——空锁文件和虚构依赖都会破坏可复现性。
-- 从 M1 起：依赖声明写入 `pyproject.toml`（由 M1-01 建立），`uv.lock` **提交到仓库**并随依赖变更同步更新；CI 依据锁文件安装。
-- 本地环境：`pyproject.toml` 存在后使用 `uv sync`。在此之前，直接用 Python 3.11+ 运行 `scripts/` 下的脚本即可。
+- **M1-01 已建立 `pyproject.toml` 与 `uv.lock`（2026-10-19）。** 运行时代码仍只使用标准库，因此 `dependencies = []` 是事实而非占位；`dev` 分组目前只有 `pytest` 与 `ruff`。不要为了让文件「看起来完整」而加入未使用的依赖。
+- 依赖变更必须同步更新 `uv.lock` 并提交；本地与 CI 用 `uv sync --frozen` 复现，不要写未经安装验证的版本。
+- 本地环境（2026-10-19 实测）：`uv sync` → `uv run pytest` → `uv run ruff check .`。`scripts/` 下的脚本仍可用系统 Python 3.11+ 直接运行，不依赖 venv。
+- CI 目前只跑标准库命令；把 lint / pytest 接进 CI 属于 M5-14，在那之前 lint 是本地合并门禁的一部分。
 - 不要并行维护第二套依赖来源（例如同时提交 `requirements.txt`）。两套并存时锁文件不再代表真实环境。
 - 选择理由：`uv` 用一个工具覆盖解释器版本、依赖解析与锁定、虚拟环境管理，并能产出可提交的 `uv.lock`，比 `pip` 加手工维护的 `requirements.txt` 更易复现。若后续发现 `uv` 无法满足需要，应在 PR 中记录原因后**整体切换**，而不是混用两套。
 

@@ -2,12 +2,11 @@
 
 import hashlib
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
