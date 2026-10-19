@@ -5,12 +5,11 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 from zipfile import ZipFile
-
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "download_public_data.py"
 spec = importlib.util.spec_from_file_location("download_public_data", SCRIPT)
@@ -53,7 +52,8 @@ class DownloadPublicDataTests(unittest.TestCase):
         payload = json.dumps([{"text": "pump hot", "tokens": ["pump", "hot"],
                                "entities": [], "relations": []}]).encode("utf-8")
         with tempfile.TemporaryDirectory() as temp:
-            with patch.object(downloader, "urlopen", return_value=FakeResponse(payload, entry["download_url"])) as request:
+            response = FakeResponse(payload, entry["download_url"])
+            with patch.object(downloader, "urlopen", return_value=response) as request:
                 location = downloader.download_dataset("maintie-gold", entry, Path(temp))
                 self.assertTrue(location.exists())
                 manifest = json.loads((location.parent / "PROVENANCE.json").read_text())
@@ -80,7 +80,8 @@ class DownloadPublicDataTests(unittest.TestCase):
     def test_corrupt_response_leaves_no_partial_final_file(self):
         entry = downloader.load_catalog()["maintie-gold"]
         with tempfile.TemporaryDirectory() as temp:
-            with patch.object(downloader, "urlopen", return_value=FakeResponse(b"this is not json" * 10, entry["download_url"])):
+            response = FakeResponse(b"this is not json" * 10, entry["download_url"])
+            with patch.object(downloader, "urlopen", return_value=response):
                 with self.assertRaises(json.JSONDecodeError):
                     downloader.download_dataset("maintie-gold", entry, Path(temp))
             self.assertFalse((Path(temp) / "maintie-gold" / "gold_release.json").exists())

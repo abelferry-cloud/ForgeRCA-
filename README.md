@@ -81,7 +81,7 @@ flowchart TD
 
 ### 0. 前置条件
 
-- Python **3.11+**；初始化脚本使用标准库，不需要模型 API Key、Docker 或数据库。
+- Python **3.11+**；初始化脚本使用标准库，不需要模型 API Key、Docker 或数据库。开发工具（pytest / ruff）由 `uv` 管理，版本锁定在 `uv.lock`。
 - 如果后续执行实际检索 / Agent 工作流，将按 [TODO](TODO.md) 引入数据库和模型依赖；**目前没有可运行的诊断 API**。
 
 ```bash
@@ -95,6 +95,14 @@ python -m unittest discover -s tests -v
 
 # 确认没有凭据、厂商原文或本地索引被纳入跟踪文件
 python scripts/check_sensitive_files.py
+```
+
+改动 Python 代码时（M1-01 起），安装锁定版本的开发工具并运行静态检查与测试：
+
+```bash
+uv sync
+uv run ruff check .
+uv run pytest
 ```
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）

@@ -15,18 +15,17 @@ from __future__ import annotations
 
 import argparse
 import csv
-from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import shutil
 import sys
 import tempfile
+from datetime import UTC, datetime
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
-
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "data" / "sources" / "public-datasets.json"
@@ -172,7 +171,7 @@ def download_dataset(
             "license": entry["license"],
             "landing_page": entry["landing_page"],
             "source_url": source_url,
-            "downloaded_at_utc": datetime.now(timezone.utc).isoformat(),
+            "downloaded_at_utc": datetime.now(UTC).isoformat(),
             "source_sha256": downloaded_sha256,
             "file_sha256": sha256_file(prepared),
             "file_name": target.name,

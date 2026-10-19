@@ -1,12 +1,11 @@
 """Validate the seed corpus, provenance and evaluation separation offline."""
 
 import argparse
-from datetime import datetime
 import hashlib
 import json
-from pathlib import Path
 import re
-
+from datetime import datetime
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS_FILES = {
@@ -29,7 +28,11 @@ def timestamp(value):
 
 def validate_firmware(value, label):
     # Seed versions include the control program, not the document revision.
-    require(value is None or (isinstance(value, str) and re.fullmatch(r"ASCKX [0-9]+\.[0-9]+", value)), f"Invalid firmware: {label}")
+    pattern = r"ASCKX [0-9]+\.[0-9]+"
+    require(
+        value is None or (isinstance(value, str) and re.fullmatch(pattern, value)),
+        f"Invalid firmware: {label}",
+    )
 
 
 def firmware_applicability(support, version):
@@ -74,7 +77,12 @@ def validate(data):
     models = set()
     for source in sources.values():
         source_models = source.get("models")
-        require(isinstance(source_models, list) and source_models and all(isinstance(model, str) and model.strip() == model and model for model in source_models), f"Invalid source models: {source['id']}")
+        require(
+            isinstance(source_models, list)
+            and source_models
+            and all(isinstance(model, str) and model.strip() == model and model for model in source_models),
+            f"Invalid source models: {source['id']}",
+        )
         require(len(source_models) == len(set(source_models)), f"Invalid source models: {source['id']}")
         models.update(source_models)
         validate_firmware(source["firmware_scope"], source["id"])
@@ -90,7 +98,10 @@ def validate(data):
             rid = record["id"]
             require(record["kind"] == kind, f"Wrong kind: {rid}")
             require(isinstance(record["synthetic"], bool), f"Synthetic flag required: {rid}")
-            require(record["text"].strip() and isinstance(record["model"], str) and record["model"].strip(), f"Empty text/model: {rid}")
+            require(
+                record["text"].strip() and isinstance(record["model"], str) and record["model"].strip(),
+                f"Empty text/model: {rid}",
+            )
             validate_firmware(record["firmware_scope" if kind == "knowledge_note" else "firmware_version"], rid)
             timestamp(record["available_at"])
             locator = record["locator"]
@@ -98,9 +109,18 @@ def validate(data):
                 require(locator["source_id"] in sources, f"Unknown source: {rid}")
                 source = sources[locator["source_id"]]
                 require(record["model"] in source["models"], f"Source model mismatch: {rid}")
-                require(type(locator["pdf_page"]) is int and 1 <= locator["pdf_page"] <= source["pages"], f"Invalid PDF page: {rid}")
+                require(
+                    type(locator["pdf_page"]) is int and 1 <= locator["pdf_page"] <= source["pages"],
+                    f"Invalid PDF page: {rid}",
+                )
                 require(locator["pdf_page"] in source["verified_pdf_pages"], f"Unverified PDF page: {rid}")
-                require(all(isinstance(locator[key], str) and locator[key].strip() for key in ("printed_page", "section")), f"Incomplete locator: {rid}")
+                require(
+                    all(
+                        isinstance(locator[key], str) and locator[key].strip()
+                        for key in ("printed_page", "section")
+                    ),
+                    f"Incomplete locator: {rid}",
+                )
                 require(record["document_revision"] == source["revision"], f"Revision mismatch: {rid}")
                 require(record["firmware_scope"] == source["firmware_scope"], f"Firmware scope mismatch: {rid}")
             else:
@@ -111,14 +131,20 @@ def validate(data):
     for order in work_orders.values():
         require(order["asset_id"].startswith("SYN-"), f"Not a synthetic asset: {order['id']}")
         require(timestamp(order["opened_at"]) <= timestamp(order["closed_at"]), "Invalid work-order interval")
-        require(timestamp(order["available_at"]) == timestamp(order["closed_at"]), "Work order available before closure")
+        require(
+            timestamp(order["available_at"]) == timestamp(order["closed_at"]),
+            "Work order available before closure",
+        )
         require(order["observations"] and order["action"] and order["outcome"], "Incomplete work order")
     for alarm in data["corpus"]["alarm"]:
         require(alarm["work_order_id"] in work_orders, "Unknown alarm work order")
         order = work_orders[alarm["work_order_id"]]
         for key in ("asset_id", "model", "alarm_code", "incident_group", "firmware_version"):
             require(alarm[key] == order[key], f"Alarm/work-order mismatch: {alarm['id']} {key}")
-        require(timestamp(order["opened_at"]) <= timestamp(alarm["occurred_at"]) <= timestamp(order["closed_at"]), "Alarm outside work-order interval")
+        require(
+            timestamp(order["opened_at"]) <= timestamp(alarm["occurred_at"]) <= timestamp(order["closed_at"]),
+            "Alarm outside work-order interval",
+        )
         require(timestamp(alarm["available_at"]) == timestamp(alarm["occurred_at"]), "Alarm availability mismatch")
 
     graph = data["graph"]
@@ -130,14 +156,20 @@ def validate(data):
     for edge in edges.values():
         require(edge["from"] in nodes and edge["to"] in nodes, "Dangling graph endpoint")
         require(edge["relation"] in edge_types, "Unknown relation type")
-        require((nodes[edge["from"]]["type"], nodes[edge["to"]]["type"]) == edge_types[edge["relation"]], "Invalid relation endpoints")
+        require(
+            (nodes[edge["from"]]["type"], nodes[edge["to"]]["type"]) == edge_types[edge["relation"]],
+            "Invalid relation endpoints",
+        )
         require(edge["evidence_id"] in evidence, "Dangling graph evidence")
         support = evidence[edge["evidence_id"]]
         require(edge["synthetic"] == support["synthetic"], "Graph provenance mismatch")
         expected_basis = "synthetic_history" if support["synthetic"] else "manufacturer_note"
         require(edge["basis"] == expected_basis, "Graph basis mismatch")
         fault = nodes[edge["to"] if edge["relation"] == "HAS_FAULT_CODE" else edge["from"]]
-        require(fault["model"] == support["model"] and fault["label"] == support["alarm_code"], "Graph fault scope mismatch")
+        require(
+            fault["model"] == support["model"] and fault["label"] == support["alarm_code"],
+            "Graph fault scope mismatch",
+        )
     for order in work_orders.values():
         require(order["confirmed_cause"] in cause_ids, "Unknown historical cause")
 
@@ -149,7 +181,10 @@ def validate(data):
             qid = question["id"]
             require(question["split"] == split, f"Split mismatch: {qid}")
             require(question["synthetic"] is True, f"Question synthetic flag: {qid}")
-            require(question["review_status"] == "agent_checked_pending_human", f"Review status requires explicit update: {qid}")
+            require(
+                question["review_status"] == "agent_checked_pending_human",
+                f"Review status requires explicit update: {qid}",
+            )
             require(question["query"].strip() and question["rationale"].strip(), f"Empty question/rationale: {qid}")
             incident = question["incident_group"]
             require(incident not in groups or groups[incident] == split, "Incident leaks across splits")
@@ -179,7 +214,13 @@ def validate(data):
                 require(applicability != "inapplicable", f"Unsupported firmware: {qid} {eid}")
                 if applicability == "unknown":
                     require(status == "insufficient", f"Unknown firmware: {qid} {eid}")
-    return {"sources": len(sources), "evidence": len(evidence), "questions": len(questions), "graph_nodes": len(nodes), "graph_edges": len(edges)}
+    return {
+        "sources": len(sources),
+        "evidence": len(evidence),
+        "questions": len(questions),
+        "graph_nodes": len(nodes),
+        "graph_edges": len(edges),
+    }
 
 
 def check_raw(sources, root=ROOT):
@@ -191,7 +232,10 @@ def check_raw(sources, root=ROOT):
         with path.open("rb") as stream:
             require(stream.read(5) == b"%PDF-", f"Invalid PDF header: {path.name}")
             stream.seek(0)
-            require(hashlib.file_digest(stream, "sha256").hexdigest() == source["sha256"], f"PDF hash mismatch: {path.name}")
+            require(
+                hashlib.file_digest(stream, "sha256").hexdigest() == source["sha256"],
+                f"PDF hash mismatch: {path.name}",
+            )
 
 
 if __name__ == "__main__":
