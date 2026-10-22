@@ -1,9 +1,9 @@
 """Typed runtime settings (M1-03).
 
 Values come from environment variables only. This module deliberately does not
-read ``.env`` files: the shell, the Makefile and Docker Compose already do that,
-and pulling in a dotenv dependency here would make configuration behaviour
-depend on the working directory.
+read ``.env`` files: the caller supplies the process environment, while Docker
+Compose loads ``.env`` for its services. The justfile does not load it globally.
+This keeps application configuration independent of the working directory.
 
 Two rules matter for safety:
 

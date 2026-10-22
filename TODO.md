@@ -71,7 +71,7 @@
 - [x] **M1-02 · P0** 建立 `app/` 分层：`ingestion/`, `retrieval/`, `db/`, `api/`, `schemas/`；保持路由不直接处理业务。*(2026-10-19：五个包已建立，`app/__init__.py` 写明依赖方向（任何层不得导入 `app.api`，`schemas` 不依赖其他层）。新增 `tests/test_app_layers.py` 作为 ratchet：用 AST 检查禁止方向（含相对导入解析）、要求 `__init__.py` 存在、并验证各层可导入。当前各层只有职责说明，业务代码按 M1-07 起逐层填充；「路由保持薄」是评审约定，当前没有路由可测)*
 - [x] **M1-03 · P0** 建立配置模块：环境变量、类型检查、缺少必填项时失败、日志中的密钥脱敏。*(2026-10-19：`app/config.py` 提供 `Settings.from_env(env=..., required=(...))`、`Secret` 与 `Settings.redacted()`。端口逐项解析并校验 1–65535，错误只报变量名、不回显原值；必填变量缺失或为空白时一次性列出全部缺失项；`Secret` 的 `repr`/`str` 恒为 `Secret(***)`，`redacted()` 把已配置密钥显示为 `***`、未配置显示为 `None`，便于区分「没配」和「配了」。14 个测试覆盖默认值与 `.env.example` 双向漂移、类型与范围、缺失必填、密钥不外泄。当前无服务读取配置，实际接入在 M1-17/M1-19)*
 - [x] **M1-04 · P0** 本地 Docker Compose 提供 PostgreSQL / OpenSearch / Neo4j；健康检查和端口可配置。*(2026-10-22：`compose.yaml` 提供回环绑定、四个可配置端口、必填凭据与命名数据卷；4 项配置边界测试通过。[Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39783749818) 实测三服务全部 healthy，写入后重建容器、回读记录通过。本机 Docker Desktop 启动失败，Windows 运行时验收仍待完成；详见 [本地服务说明](docs/local-services.md)。不代表业务表、索引或图谱已实现)*
-- [ ] **M1-05 · P1** 增加 `Makefile` / `justfile`：`lint`, `test`, `data-check`, `up`, `down`, `ingest`；只有实测能运行后再在 README 展示。
+- [ ] **M1-05 · P1** 增加 `Makefile` / `justfile`：`lint`, `test`, `data-check`, `up`, `down`, `ingest`；只有实测能运行后再在 README 展示。*(2026-10-22：已增加 `justfile`，`rust-just==1.58.0` 仅列入开发依赖；Windows 命令边界测试通过，服务启停入口待 Linux CI 验收。`ingest` 当前明确返回非零，真实导入待 M1-07～18，不将占位入口描述为导入能力)*
 - [ ] **M1-06 · P1** 版本锁定：Docling、向量模型、OpenSearch mapping、DB migration 工具；提交可重现版本清单。
 
 ### M1-B · 文档解析与证据锚点

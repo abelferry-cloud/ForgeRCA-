@@ -15,6 +15,7 @@ dependencies = []
 dev = [
     "pytest>=8.3",
     "ruff>=0.9",
+    "rust-just==1.58.0",
 ]
 
 [tool.uv]
