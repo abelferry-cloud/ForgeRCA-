@@ -1,0 +1,69 @@
+name: Validate local services
+
+on:
+  push:
+    paths:
+      - compose.yaml
+      - .env.example
+      - tests/test_compose.py
+      - .github/workflows/compose.yml
+  pull_request:
+    paths:
+      - compose.yaml
+      - .env.example
+      - tests/test_compose.py
+      - .github/workflows/compose.yml
+
+permissions:
+  contents: read
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Prepare temporary credentials
+        shell: bash
+        run: |
+          pg_pass=$(openssl rand -hex 24)
+          neo4j_pass=$(openssl rand -hex 24)
+          echo "::add-mask::$pg_pass"
+          echo "::add-mask::$neo4j_pass"
+          echo "POSTGRES_PASSWORD=$pg_pass" >> "$GITHUB_ENV"
+          echo "NEO4J_PASSWORD=$neo4j_pass" >> "$GITHUB_ENV"
+      - name: Check interpolation and start services
+        run: |
+          python -m unittest discover -s tests -p test_compose.py -v
+          sudo sysctl -w vm.max_map_count=262144
+          docker compose config --quiet
+          docker compose up -d --wait --wait-timeout 300
+          docker compose ps
+      - name: Write disposable records
+        run: |
+          docker compose exec -T postgres psql -U forgerca -d forgerca -v ON_ERROR_STOP=1 \
+            -c "CREATE TABLE compose_smoke (value text); INSERT INTO compose_smoke VALUES ('persisted');"
+          curl --fail --silent --show-error -X PUT http://127.0.0.1:9200/compose-smoke/_doc/1 \
+            -H 'Content-Type: application/json' -d '{"value":"persisted"}'
+          echo "CREATE (:ComposeSmoke {value: 'persisted'});" | docker compose exec -T neo4j sh -c \
+            'cypher-shell -u "$HEALTH_USER" -p "$HEALTH_PASSWORD"'
+          curl --fail --silent --show-error http://127.0.0.1:7474/ > /dev/null
+      - name: Recreate containers and verify persisted records
+        run: |
+          docker compose down
+          docker compose up -d --wait --wait-timeout 300
+          docker compose exec -T postgres psql -U forgerca -d forgerca -Atc \
+            'SELECT value FROM compose_smoke;' | grep -Fx persisted
+          curl --fail --silent --show-error http://127.0.0.1:9200/compose-smoke/_doc/1 \
+            | python -c 'import json, sys; assert json.load(sys.stdin)["_source"]["value"] == "persisted"'
+          docker compose exec -T neo4j sh -c \
+            'cypher-shell -u "$HEALTH_USER" -p "$HEALTH_PASSWORD" --format plain "MATCH (n:ComposeSmoke) RETURN n.value;"' \
+            | grep -Fx '"persisted"'
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail 80
+      - name: Remove disposable containers and volumes
+        if: always()
+        run: docker compose down --volumes

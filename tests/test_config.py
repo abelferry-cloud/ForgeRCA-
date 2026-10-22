@@ -24,6 +24,8 @@ EXPECTED_DEFAULTS: dict[str, object] = {
     "OPENSEARCH_PASSWORD": "",
     "OPENSEARCH_INDEX_PREFIX": "forgerca",
     "NEO4J_URI": "bolt://localhost:7687",
+    "NEO4J_HTTP_PORT": 7474,
+    "NEO4J_BOLT_PORT": 7687,
     "NEO4J_USER": "neo4j",
     "NEO4J_PASSWORD": "",
     "EMBEDDING_MODEL": "",

@@ -107,6 +107,8 @@ class Settings:
     opensearch_index_prefix: str = "forgerca"
 
     neo4j_uri: str = "bolt://localhost:7687"
+    neo4j_http_port: int = 7474
+    neo4j_bolt_port: int = 7687
     neo4j_user: str = "neo4j"
     neo4j_password: Secret = Secret()
 
@@ -147,6 +149,8 @@ class Settings:
             opensearch_user=_text(source, "OPENSEARCH_USER"),
             opensearch_index_prefix=_text(source, "OPENSEARCH_INDEX_PREFIX", "forgerca"),
             neo4j_uri=_text(source, "NEO4J_URI", "bolt://localhost:7687"),
+            neo4j_http_port=_port(source, "NEO4J_HTTP_PORT", 7474),
+            neo4j_bolt_port=_port(source, "NEO4J_BOLT_PORT", 7687),
             neo4j_user=_text(source, "NEO4J_USER", "neo4j"),
             embedding_model=_text(source, "EMBEDDING_MODEL"),
             reranker_model=_text(source, "RERANKER_MODEL"),
