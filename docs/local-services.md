@@ -53,4 +53,8 @@ python -m unittest discover -s tests -p test_compose.py -v
 
 `.github/workflows/compose.yml` 在独立 GitHub Actions runner 中生成临时凭据、启动三个容器、写入一次性记录、执行 `down` 后重新创建容器并回读记录，最后删除测试卷。测试内容仅为 `persisted` 标记，不导入任何语料或评测数据。
 
-2026-10-22 本地配置测试通过；Docker Desktop 4.43.1 在初始化 `dockerInference` 时因文件访问错误退出，无法进行本地运行时验收。CI 运行结果待本 PR 验证，不将静态校验描述为服务已经启动。
+2026-10-22 验收记录：
+
+- Windows 本地：Python 3.12.10、Compose v2.38.1-desktop.1；配置边界测试 4 项通过，全量 unittest 84 项通过，pytest 84 passed + 83 subtests，Ruff、离线数据校验与敏感文件扫描通过。
+- [Linux CI 运行 #39783749818](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39783749818)：三个服务首次启动全部 `healthy`，分别成功写入测试记录；执行 `down` 保留卷、再次 `up --wait` 后，三个存储均回读 `persisted` 成功，最后清理测试卷。完整任务耗时 1 分 31 秒。
+- 本机 Docker Desktop 4.43.1 在初始化 `dockerInference` 时因文件访问错误退出。**Windows 本机容器启动尚未验收**；以上运行时证据来自 Linux CI。

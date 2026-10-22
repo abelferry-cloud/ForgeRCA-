@@ -105,7 +105,7 @@ uv run ruff check .
 uv run pytest
 ```
 
-M1-04 的本地数据库配置见 [本地服务说明](docs/local-services.md)，包含三个服务、端口覆盖、启动命令和验收记录。Compose 配置已通过本地校验，容器运行时验收状态见该文档；目前仍没有应用表结构、索引或诊断 API。
+M1-04 的本地数据库配置见 [本地服务说明](docs/local-services.md)，包含三个服务、端口覆盖、启动命令和验收记录。Linux CI 已通过健康检查与容器重建后的数据保留验证；Windows 本机启动仍待验收。目前仍没有应用表结构、索引或诊断 API。
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 
@@ -199,7 +199,7 @@ ForgeRCA-/
 | 阶段 | 工作重点 | 主要产物 | 状态 |
 | --- | --- | --- | --- |
 | M0 | 来源锁定、合成种子数据、数据校验和文档 | `data/`, `docs/`, 初始化脚本 | 🟡 工程与数据项完成（22/23），仅待人工复核 |
-| M1 | PDF 解析、稳定锚点、Dense-only RAG | 可追溯最小 RAG | ⬜ 待实现 |
+| M1 | PDF 解析、稳定锚点、Dense-only RAG | 可追溯最小 RAG | 🟡 M1-01～04 底座完成，RAG 待实现 |
 | M2 | BM25 + Dense + RRF + BGE-Reranker | 混合检索与版本过滤 | ⬜ 待实现 |
 | M3 | 信息抽取、实体消歧、图谱证据追溯 | Neo4j GraphRAG | ⬜ 待实现 |
 | M4 | LangGraph 补检与 Langfuse 追踪 | Agent 诊断报告与 trace | ⬜ 待实现 |
