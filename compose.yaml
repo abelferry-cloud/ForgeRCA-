@@ -6,9 +6,9 @@
 # stack to a network or copy these settings into anything shared.
 #
 #   cp .env.example .env      # then fill POSTGRES_PASSWORD and NEO4J_PASSWORD
-#   docker compose up -d
-#   docker compose ps         # wait until every service reports "healthy"
-#   docker compose down       # add -v to discard the data volumes
+#   docker compose up -d --wait --wait-timeout 300
+#   docker compose ps
+#   docker compose down       # preserves the data volumes
 #
 # Host ports are configurable through POSTGRES_PORT / OPENSEARCH_PORT /
 # NEO4J_HTTP_PORT / NEO4J_BOLT_PORT in .env.
@@ -21,15 +21,14 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-forgerca}
       POSTGRES_USER: ${POSTGRES_USER:-forgerca}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      # pg_isready only checks the socket; the query is what proves the
-      # configured database is reachable, not just the server process.
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      # pg_isready checks server readiness, not credentials or schema readiness.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -66,13 +65,14 @@ services:
   neo4j:
     image: neo4j:5.26-community
     environment:
-      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}
+      # The official image only supports neo4j as the initial username.
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?required}
       # cypher-shell reads these two. They must not start with NEO4J_, or the
       # server would parse them as (invalid) configuration keys and refuse to
       # start. Credentials in the container environment are a local-dev
       # trade-off, not a pattern to reuse elsewhere.
-      HEALTH_USER: ${NEO4J_USER:-neo4j}
-      HEALTH_PASSWORD: ${NEO4J_PASSWORD:?set NEO4J_PASSWORD in .env}
+      HEALTH_USER: neo4j
+      HEALTH_PASSWORD: ${NEO4J_PASSWORD:?required}
     ports:
       - "127.0.0.1:${NEO4J_HTTP_PORT:-7474}:7474"
       - "127.0.0.1:${NEO4J_BOLT_PORT:-7687}:7687"

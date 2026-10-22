@@ -105,6 +105,8 @@ uv run ruff check .
 uv run pytest
 ```
 
+M1-04 的本地数据库配置见 [本地服务说明](docs/local-services.md)，包含三个服务、端口覆盖、启动命令和验收记录。Compose 配置已通过本地校验，容器运行时验收状态见该文档；目前仍没有应用表结构、索引或诊断 API。
+
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 
 ```bash
