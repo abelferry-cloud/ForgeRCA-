@@ -10,6 +10,9 @@ on:
       - pyproject.toml
       - uv.lock
       - tests/test_dev_commands.py
+      - versions.lock.json
+      - config/opensearch/**
+      - tests/test_version_lock.py
       - .github/workflows/compose.yml
   pull_request:
     paths:
@@ -20,6 +23,9 @@ on:
       - pyproject.toml
       - uv.lock
       - tests/test_dev_commands.py
+      - versions.lock.json
+      - config/opensearch/**
+      - tests/test_version_lock.py
       - .github/workflows/compose.yml
 
 permissions:
@@ -40,6 +46,7 @@ jobs:
         run: |
           uv sync --frozen
           uv run --frozen python -m unittest discover -s tests -p test_dev_commands.py -v
+          uv run --frozen python -m unittest discover -s tests -p test_version_lock.py -v
       - name: Prepare temporary credentials
         shell: bash
         run: |
@@ -56,6 +63,41 @@ jobs:
           docker compose config --quiet
           uv run --frozen just up
           docker compose ps
+      - name: Validate the locked mapping with synthetic vectors
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.error import HTTPError
+          from urllib.request import Request, urlopen
+
+          lock = json.loads(Path('versions.lock.json').read_text())
+          spec = json.loads(Path(lock['opensearch_mapping']['path']).read_text())
+          base = 'http://127.0.0.1:9200/version-lock-smoke'
+
+          def request(path, payload=None):
+              body = json.dumps(payload).encode() if payload is not None else None
+              req = Request(base + path, data=body, method='PUT' if body else 'GET',
+                            headers={'Content-Type': 'application/json'})
+              with urlopen(req, timeout=30) as response:
+                  return json.load(response)
+
+          assert request('', spec)['acknowledged']
+          actual = request('/_mapping')['version-lock-smoke']['mappings']
+          assert actual == spec['mappings'], actual
+          doc = {'evidence_id': 'synthetic-version-smoke',
+                 'embedding': [1.0] + [0.0] * (lock['embedding']['dimension'] - 1)}
+          assert request('/_doc/1', doc)['result'] == 'created'
+          assert request('/_doc/1')['_source'] == doc
+          for invalid in ({**doc, 'embedding': [1.0, 0.0]}, {**doc, 'undeclared': 'value'}):
+              try:
+                  request('/_doc/invalid', invalid)
+              except HTTPError as error:
+                  assert error.code == 400, error.read()
+              else:
+                  raise AssertionError('Invalid vector or undeclared field was accepted')
+          print('Locked mapping accepted; vector size and strict fields enforced')
+          PY
       - name: Write disposable records
         run: |
           docker compose exec -T postgres psql -U forgerca -d forgerca -v ON_ERROR_STOP=1 \

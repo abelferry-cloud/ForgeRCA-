@@ -50,6 +50,10 @@ class ComposeConfigTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)["services"]
 
+    def test_images_match_version_lock(self):
+        lock = json.loads((ROOT / "versions.lock.json").read_text(encoding="utf-8"))
+        self.assertEqual({name: config["image"] for name, config in self.services().items()}, lock["images"])
+
     def test_ports_stay_on_loopback_with_defaults_and_overrides(self):
         cases = (
             ({}, {"postgres": [5432], "opensearch": [9200], "neo4j": [7474, 7687]}),
