@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "verified_on": "2026-10-23",
+  "python_dependencies": {
+    "lock_file": "uv.lock",
+    "uv_version": "0.10.12"
+  },
+  "packages": {
+    "docling": {
+      "version": "2.142.0",
+      "implementation_milestone": "M1-07",
+      "verification": "wheel_sha256",
+      "url": "https://files.pythonhosted.org/packages/e9/40/ebabf374d7fc77824fb3812e835581112cf16de9443c28d5199f25523238/docling-2.142.0-py3-none-any.whl",
+      "sha256": "57dee8ce7324c6b905d01d01d8fd58783a3649180b5a4a3093b00d1003fdcf61"
+    },
+    "docling-slim": {
+      "version": "2.142.0",
+      "implementation_milestone": "M1-07",
+      "verification": "wheel_sha256",
+      "url": "https://files.pythonhosted.org/packages/d3/45/c33d4c60f38a063a4ba2447a4d6b2b004e89fa4309380490f5a742614045/docling_slim-2.142.0-py3-none-any.whl",
+      "sha256": "1841e4fe8fdbc1e37da544222a48b40b82c4ad64c875458ef16ed6a88098850e"
+    },
+    "alembic": {
+      "version": "1.20.1",
+      "implementation_milestone": "M1-17",
+      "verification": "wheel_sha256",
+      "url": "https://files.pythonhosted.org/packages/11/3c/8740f5b4e1bd57333e4f84265b9b6363da4f7cf70f5622dd1e2fde7a0bd5/alembic-1.20.1-py3-none-any.whl",
+      "sha256": "9970712cfb81ea26c8658d378aaa5b8f6ff9146e5bb111d70497c164016cf598"
+    }
+  },
+  "embedding": {
+    "model_id": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "dimension": 1024,
+    "implementation_milestone": "M1-20",
+    "verification": "configuration_sha256",
+    "configuration_files": {
+      "config.json": "26159e7ad065073448460117eb24b7a4572f6f4e78eadff65dc0a11c052449fa",
+      "modules.json": "84e40c8e006c9b1d6c122e02cba9b02458120b5fb0c87b746c41e0207cf642cf",
+      "1_Pooling/config.json": "e54c164a07274f2eb45bb724f54a79d1efcc90c41573887cd9a29aeee0597352",
+      "sentence_bert_config.json": "eb9b44b13c0f52a3b3685c3b1cbdea1ba8b04bea123b98f61610048940776eb1"
+    }
+  },
+  "opensearch_mapping": {
+    "version": "dense-v1",
+    "path": "config/opensearch/dense-v1.json",
+    "sha256": "118a2a120def2ef5fba6e5ea9cfd760b9bf4c8c0ab787746c26f2b3dcacb7cf8",
+    "implementation_milestone": "M1-19"
+  },
+  "images": {
+    "postgres": "postgres:16.4-alpine@sha256:5660c2cbfea50c7a9127d17dc4e48543eedd3d7a41a595a2dfa572471e37e64c",
+    "opensearch": "opensearchproject/opensearch:2.17.1@sha256:1193b7c29c5d63028523728243cc4da047ac49f697a8f8105e5aeee2f89bcc4c",
+    "neo4j": "neo4j:5.26-community@sha256:eaee4488d580749ce332bd028f5be3917edf91f562d76c5443a51c08ec347b1f"
+  }
+}

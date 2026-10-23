@@ -1,6 +1,6 @@
 # ForgeRCA · Engineering TODO / Roadmap
 
-> **版本**：v0.5.3（2026-10-22） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。**M1 已启动**，M1-01～05 的底座与命令入口完成（容器运行验收在 Linux CI），下一项为 M1-06；实际导入仍待实现。
+> **版本**：v0.5.4（2026-10-23） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。**M1 已启动**，M1-01～06 的底座、命令入口与版本工件清单完成（容器运行验收在 Linux CI），下一项为 M1-07；实际解析、导入与模型推理仍待实现。
 > **首期设备**：ABB ACS580-01（沿用仓库现有来源清单和数据协议）；后续多品牌扩展单独列入 Backlog。  
 > 本清单是**工作计划，不代表实际已完成**。以下默认任务未勾选；可在 GitHub PR 验收后逐项勾选。
 
@@ -72,7 +72,7 @@
 - [x] **M1-03 · P0** 建立配置模块：环境变量、类型检查、缺少必填项时失败、日志中的密钥脱敏。*(2026-10-19：`app/config.py` 提供 `Settings.from_env(env=..., required=(...))`、`Secret` 与 `Settings.redacted()`。端口逐项解析并校验 1–65535，错误只报变量名、不回显原值；必填变量缺失或为空白时一次性列出全部缺失项；`Secret` 的 `repr`/`str` 恒为 `Secret(***)`，`redacted()` 把已配置密钥显示为 `***`、未配置显示为 `None`，便于区分「没配」和「配了」。14 个测试覆盖默认值与 `.env.example` 双向漂移、类型与范围、缺失必填、密钥不外泄。当前无服务读取配置，实际接入在 M1-17/M1-19)*
 - [x] **M1-04 · P0** 本地 Docker Compose 提供 PostgreSQL / OpenSearch / Neo4j；健康检查和端口可配置。*(2026-10-22：`compose.yaml` 提供回环绑定、四个可配置端口、必填凭据与命名数据卷；4 项配置边界测试通过。[Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39783749818) 实测三服务全部 healthy，写入后重建容器、回读记录通过。本机 Docker Desktop 启动失败，Windows 运行时验收仍待完成；详见 [本地服务说明](docs/local-services.md)。不代表业务表、索引或图谱已实现)*
 - [x] **M1-05 · P1** 增加 `Makefile` / `justfile`：`lint`, `test`, `data-check`, `up`, `down`, `ingest`；只有实测能运行后再在 README 展示。*(2026-10-22：`justfile` 提供六个入口，`rust-just==1.58.0` 仅列入开发依赖并锁定；Windows 实测 lint / data-check 通过，test 为 88 passed + 83 subtests。4 项行为测试覆盖默认只列命令、含空格路径与子目录执行、失败即停止、ingest 明确返回非零；[Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39795723492) 通过新 up/down 入口完成三服务健康检查与重建后记录回读。README 已记录实测命令。**这里只完成入口；实际 ingest 仍待 M1-07～18**)*
-- [ ] **M1-06 · P1** 版本锁定：Docling、向量模型、OpenSearch mapping、DB migration 工具；提交可重现版本清单。
+- [x] **M1-06 · P1** 版本锁定：Docling、向量模型、OpenSearch mapping、DB migration 工具；提交可重现版本清单。*(2026-10-23：[版本清单](docs/version-lock.md) 固定 Docling / Docling Slim 2.142.0、Alembic 1.20.1 的发布文件指纹，BGE-M3 完整 revision 与配置指纹，`dense-v1` mapping 字节哈希及三服务镜像 digest。7 个上游工件实算 SHA-256 匹配；本地 pytest 93 passed + 86 subtests、unittest 93 项及 Ruff / 数据 / 敏感文件检查通过。[Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39892392668) 通过固定镜像启动、卷保留回读和 mapping 正反例。**这里只锁定工件身份；完整运行依赖、解析模型资产、业务迁移/索引和 embedding 推理配置仍在后续对应任务实现和验收**)*
 
 ### M1-B · 文档解析与证据锚点
 

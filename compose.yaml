@@ -17,7 +17,7 @@ name: forgerca
 
 services:
   postgres:
-    image: postgres:16.4-alpine
+    image: postgres:16.4-alpine@sha256:5660c2cbfea50c7a9127d17dc4e48543eedd3d7a41a595a2dfa572471e37e64c
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-forgerca}
       POSTGRES_USER: ${POSTGRES_USER:-forgerca}
@@ -36,7 +36,7 @@ services:
     restart: unless-stopped
 
   opensearch:
-    image: opensearchproject/opensearch:2.17.1
+    image: opensearchproject/opensearch:2.17.1@sha256:1193b7c29c5d63028523728243cc4da047ac49f697a8f8105e5aeee2f89bcc4c
     environment:
       discovery.type: single-node
       bootstrap.memory_lock: "true"
@@ -63,7 +63,7 @@ services:
     restart: unless-stopped
 
   neo4j:
-    image: neo4j:5.26-community
+    image: neo4j:5.26-community@sha256:eaee4488d580749ce332bd028f5be3917edf91f562d76c5443a51c08ec347b1f
     environment:
       # The official image only supports neo4j as the initial username.
       NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:?required}

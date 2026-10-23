@@ -9,7 +9,7 @@
 - 将 `.env.example` 复制为 `.env`，填写非空 `POSTGRES_PASSWORD` 和至少 8 个字符的 `NEO4J_PASSWORD`。已有 `.env` 时直接编辑，不覆盖原配置；`.env` 不提交 Git。密码包含 `$` 或 `#` 时，用单引号包围整个值以保持字面量。
 - Neo4j 初始用户固定为 `neo4j`，本地连接的 `NEO4J_USER` 保持该值。官方镜像不支持通过 `NEO4J_AUTH` 改初始用户名，见 [Neo4j 初始化说明](https://neo4j.com/docs/operations-manual/current/docker/introduction/)。
 
-本次选用的镜像标签为 `postgres:16.4-alpine`、`opensearchproject/opensearch:2.17.1`、`neo4j:5.26-community`；不是最新版本或安全审计结论，也尚未按镜像 digest 锁定。完整版本复现清单属于 M1-06。
+镜像标签为 `postgres:16.4-alpine`、`opensearchproject/opensearch:2.17.1`、`neo4j:5.26-community`；M1-06 已在 Compose 中按多架构 digest 固定，具体身份与复验方式见[版本清单](version-lock.md)。这不是最新版本或安全审计结论。
 
 ## 启动与停止
 

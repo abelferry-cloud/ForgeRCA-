@@ -1,0 +1,30 @@
+{
+  "settings": {
+    "index": {
+      "knn": true,
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "_meta": {
+      "mapping_version": "dense-v1",
+      "embedding_model": "BAAI/bge-m3",
+      "embedding_revision": "5617a9f61b028005a4858fdac845db406aefb181"
+    },
+    "properties": {
+      "evidence_id": {"type": "keyword"},
+      "embedding": {
+        "type": "knn_vector",
+        "dimension": 1024,
+        "method": {
+          "name": "hnsw",
+          "engine": "lucene",
+          "space_type": "cosinesimil",
+          "parameters": {"ef_construction": 100, "m": 16}
+        }
+      }
+    }
+  }
+}
