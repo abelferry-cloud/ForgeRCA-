@@ -61,7 +61,7 @@ for item, level in document.iterate_items():
 uv run --frozen python -m unittest discover -s tests -p test_pdf_parsing.py -v
 ```
 
-`.github/workflows/pdf-parser.yml` 在 Linux / Python 3.11 安装锁定的 CPU 依赖，运行上述离线契约测试；标准库数据 CI 仍可运行，没有 Docling 时明确跳过其四项契约测试。Compose CI 只安装开发工具，不承担 PDF 推理验证。
+`.github/workflows/pdf-parser.yml` 在 Linux / Python 3.11 安装锁定的 CPU 依赖，运行上述离线契约测试；[首次 CI 运行](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39929017180) 的 11 项测试全部通过。标准库数据 CI 仍可运行，没有 Docling 时明确跳过其四项契约测试。Compose CI 只安装开发工具，不承担 PDF 推理验证。
 
 2026-10-23 在 Windows / Python 3.12.10 上，通过上述 CLI 解析了已验原文件指纹的 4 个物理页；模型五个文件的 SHA-256 全部匹配，推理时设置 `HF_HUB_OFFLINE=1` 与 `TRANSFORMERS_OFFLINE=1`。对照本地渲染页面检查结构：
 
