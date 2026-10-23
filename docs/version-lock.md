@@ -1,23 +1,23 @@
 # 版本锁定与复现范围（M1-06）
 
-核验日期：2026-10-23。机器可读清单为 [`versions.lock.json`](../versions.lock.json)。清单锁定外部工件身份；只有已经实现的开发环境和容器接受运行验证。它不代表 PDF 解析、业务迁移、embedding 推理或检索已实现。
+核验日期：2026-10-23。机器可读清单为 [`versions.lock.json`](../versions.lock.json)。清单锁定外部工件身份；运行验证范围分别见[本地服务](local-services.md)和 M1-07 [PDF 解析说明](pdf-parsing.md)。它不代表业务迁移、embedding 推理或检索已实现。
 
 ## 锁定内容
 
 | 项目 | 固定身份 | 本次验证及后续边界 |
 | --- | --- | --- |
 | Python 开发环境 | `uv.lock`；uv `0.10.12` | `uv sync --frozen`，本机 Python 3.12.10；项目最低 3.11，开发工具版本以锁文件为准 |
-| Docling | `docling==2.142.0`、`docling-slim==2.142.0` 的 wheel SHA-256 | 下载并核对两个发布文件；未安装或解析 PDF。Docling 此版本通过 `docling-slim[standard]` 提供实现 |
+| Docling | `docling==2.142.0`、`docling-slim==2.142.0` 的 wheel SHA-256 | M1-07 已引入运行依赖，完整依赖见 `uv.lock`，解析范围见 [PDF 说明](pdf-parsing.md)。Docling 此版本通过 `docling-slim[standard]` 提供实现 |
 | DB migration 工具 | `alembic==1.20.1` 的 wheel SHA-256 | 下载并核对发布文件；M1-17 才引入 SQLAlchemy、驱动、迁移环境和业务表 |
 | 初始向量模型 | `BAAI/bge-m3`，revision `5617a9f61b028005a4858fdac845db406aefb181` | 核对该 revision 下四份配置文件及 SHA-256；未下载权重或运行推理 |
 | OpenSearch mapping | [`dense-v1.json`](../config/opensearch/dense-v1.json) 的完整字节 SHA-256 | 固定 1024 维、Lucene HNSW、cosine；CI 用人工构造向量检查接受与拒绝行为 |
 | 本地服务镜像 | 三个多架构 image index / manifest list digest | Compose 直接使用 `tag@sha256:…`，固定镜像集合；Linux CI 验证启动和保留卷重建 |
 
-包来源：[Docling 2.142.0](https://pypi.org/project/docling/2.142.0/)、[Docling Slim 2.142.0](https://pypi.org/project/docling-slim/2.142.0/)、[Alembic 1.20.1](https://pypi.org/project/alembic/1.20.1/)。清单记录实际下载 wheel 的 URL 和实算 SHA-256，并与 PyPI JSON 元数据一致。这里没有安装验证，也没有锁定未来完整传递依赖；实现对应功能时才将依赖加入 `pyproject.toml`，生成并验证新的 `uv.lock`。清单不能替代 Python 依赖锁文件。
+包来源：[Docling 2.142.0](https://pypi.org/project/docling/2.142.0/)、[Docling Slim 2.142.0](https://pypi.org/project/docling-slim/2.142.0/)、[Alembic 1.20.1](https://pypi.org/project/alembic/1.20.1/)。清单记录实际下载 wheel 的 URL 和实算 SHA-256，并与 PyPI JSON 元数据一致。M1-07 已安装并锁定 Docling 的传递依赖；Alembic 仍只核验发布文件，待 M1-17 安装。清单不能替代 Python 依赖锁文件。
 
 模型的 [固定 revision](https://huggingface.co/BAAI/bge-m3/tree/5617a9f61b028005a4858fdac845db406aefb181) 保留权重和配置身份。配置显示 1024 维、CLS pooling、Normalize 模块与 8192 最大序列长度；这些是上游配置事实，不是本机推理结果。M1-20 仍需锁定并实测推理库、计算精度、归一化调用、截断策略与批大小；不得仅靠模型名或 `main` 下载来复现实验。
 
-Docling 的 OCR、布局/表格模型工件和转换参数留在 M1-07 / M1-14 锁定；当前 wheel 指纹不足以复现解析输出。生成模型与 reranker 尚未选择，不列为已锁定项。
+M1-07 已在 `pdf_parser_models` 中固定 Docling 布局/表格模型的完整 revision 与五个文件指纹，解析结果记录选用参数。OCR 当前关闭；增量识别与解析参数变更策略仍属 M1-14，不能仅靠 wheel 指纹复现解析输出。生成模型与 reranker 尚未选择，不列为已锁定项。
 
 ## Mapping 边界
 

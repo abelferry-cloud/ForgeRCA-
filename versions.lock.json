@@ -51,5 +51,24 @@
     "postgres": "postgres:16.4-alpine@sha256:5660c2cbfea50c7a9127d17dc4e48543eedd3d7a41a595a2dfa572471e37e64c",
     "opensearch": "opensearchproject/opensearch:2.17.1@sha256:1193b7c29c5d63028523728243cc4da047ac49f697a8f8105e5aeee2f89bcc4c",
     "neo4j": "neo4j:5.26-community@sha256:eaee4488d580749ce332bd028f5be3917edf91f562d76c5443a51c08ec347b1f"
+  },
+  "pdf_parser_models": {
+    "layout": {
+      "repo_id": "docling-project/docling-layout-heron",
+      "revision": "8f39ad3c0b4c58e9c2d2c84a38465abf757272d8",
+      "files": {
+        "config.json": "fdea30805ce2f5666b147fca941dcdd27ad468e27d6ed21902207d3da056a97d",
+        "preprocessor_config.json": "cd38cd59999e7a95d68e487fbe5132df3d4e5c32a0836add57e6126ba0c4eaf1",
+        "model.safetensors": "00333a43451945aaf89db8ca9c0a17e75d1537c17db60fdb91aa95f4c7929e0c"
+      }
+    },
+    "table": {
+      "repo_id": "docling-project/docling-models",
+      "revision": "fc0f2d45e2218ea24bce5045f58a389aed16dc23",
+      "files": {
+        "model_artifacts/tableformer/accurate/tm_config.json": "984e122ceb8ccf84d84c9d2882f6f2302a44b4f1e577babd6289892c36f3cffd",
+        "model_artifacts/tableformer/accurate/tableformer_accurate.safetensors": "2a7d6c924b3cd12fb99a09280ca9c33a89c5d60b93253617d2e088c1a40374d9"
+      }
+    }
   }
 }

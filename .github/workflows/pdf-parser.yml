@@ -1,0 +1,48 @@
+name: Validate PDF parser contracts
+
+on:
+  push:
+    paths:
+      - app/ingestion/**
+      - scripts/parse_pdf.py
+      - scripts/download_parser_models.py
+      - scripts/download_sources.py
+      - tests/test_pdf_parsing.py
+      - pyproject.toml
+      - uv.lock
+      - versions.lock.json
+      - .github/workflows/pdf-parser.yml
+  pull_request:
+    paths:
+      - app/ingestion/**
+      - scripts/parse_pdf.py
+      - scripts/download_parser_models.py
+      - scripts/download_sources.py
+      - tests/test_pdf_parsing.py
+      - pyproject.toml
+      - uv.lock
+      - versions.lock.json
+      - .github/workflows/pdf-parser.yml
+
+permissions:
+  contents: read
+
+jobs:
+  parser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.10.12"
+          python-version: "3.11"
+      - name: Install locked CPU parser dependencies
+        run: uv sync --frozen
+      - name: Validate structure and failure handling without models or vendor PDFs
+        run: uv run --frozen python -m unittest discover -s tests -p test_pdf_parsing.py -v

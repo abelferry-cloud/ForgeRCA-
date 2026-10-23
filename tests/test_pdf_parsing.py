@@ -1,0 +1,179 @@
+"""Parser contracts use synthetic Docling items; no vendor PDF or model download."""
+
+import hashlib
+import importlib.util
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from app.ingestion import pdf
+from scripts import download_parser_models, parse_pdf
+
+
+class ParserModelTests(unittest.TestCase):
+    def test_missing_or_corrupt_model_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(pdf, "MODELS_DIR", Path(directory)):
+            pins = {"layout": {"repo_id": "example/model", "revision": "a" * 40,
+                               "files": {"model.safetensors": hashlib.sha256(b"valid").hexdigest()}}}
+            with patch.object(pdf, "MODEL_PINS", pins):
+                with self.assertRaisesRegex(ValueError, "Missing or invalid"):
+                    pdf.verify_models()
+                target = Path(directory) / "example--model/model.safetensors"
+                target.parent.mkdir()
+                target.write_bytes(b"corrupt")
+                with self.assertRaisesRegex(ValueError, "Missing or invalid"):
+                    pdf.verify_models()
+                target.write_bytes(b"valid")
+                pdf.verify_models()
+
+
+@unittest.skipUnless(importlib.util.find_spec("docling"), "Run with uv sync --frozen for parser dependencies")
+class DoclingContractTests(unittest.TestCase):
+    def setUp(self):
+        from docling_core.types.doc import (
+            BoundingBox,
+            DocItemLabel,
+            DoclingDocument,
+            ProvenanceItem,
+            Size,
+            TableCell,
+            TableData,
+        )
+
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.source = Path(self.directory.name) / "synthetic.pdf"
+        self.source.write_bytes(b"%PDF-1.4\nmock converter input")
+        self.doc = DoclingDocument(name="synthetic")
+        for page in (7, 8):
+            self.doc.add_page(page_no=page, size=Size(width=200, height=300))
+        prov = ProvenanceItem(page_no=7, bbox=BoundingBox(l=0, t=30, r=100, b=0), charspan=(0, 5))
+        self.doc.add_heading(text="Title", prov=prov)
+        self.doc.add_text(label=DocItemLabel.TEXT, text="Before table", prov=prov)
+        cells = [
+            TableCell(text="Merged header", column_header=True, col_span=2,
+                      start_row_offset_idx=0, end_row_offset_idx=1, start_col_offset_idx=0, end_col_offset_idx=2),
+            TableCell(text="0010", start_row_offset_idx=1, end_row_offset_idx=2,
+                      start_col_offset_idx=0, end_col_offset_idx=1),
+            TableCell(text="Synthetic action", start_row_offset_idx=1, end_row_offset_idx=2,
+                      start_col_offset_idx=1, end_col_offset_idx=2),
+        ]
+        table = self.doc.add_table(data=TableData(num_rows=2, num_cols=2, table_cells=cells), prov=prov)
+        table.prov.append(prov.model_copy(update={"page_no": 8}))
+        self.doc.add_text(label=DocItemLabel.TEXT, text="After table", prov=prov)
+        self.doc.add_text(label=DocItemLabel.TEXT, text="Next page", prov=prov.model_copy(update={"page_no": 8}))
+
+    def convert(self, status="success"):
+        from docling.datamodel.base_models import ConversionStatus
+
+        with patch.object(pdf, "verify_models"), patch("docling.document_converter.DocumentConverter") as factory:
+            factory.return_value.convert.return_value = SimpleNamespace(
+                status=ConversionStatus(status), document=self.doc,
+            )
+            result = pdf.parse_pdf(self.source, (7, 8))
+        return result, factory
+
+    def test_tree_order_page_provenance_and_merged_cells_survive(self):
+        from docling.datamodel.base_models import InputFormat
+        from docling_core.types.doc import DoclingDocument
+
+        result, factory = self.convert()
+        restored = DoclingDocument.model_validate(json.loads(json.dumps(result))["document"])
+        self.assertEqual([item.self_ref for item, _ in restored.iterate_items()],
+                         ["#/texts/0", "#/texts/1", "#/tables/0", "#/texts/2", "#/texts/3"])
+        self.assertEqual([item.prov[0].page_no for item, _ in restored.iterate_items()], [7, 7, 7, 7, 8])
+        self.assertEqual([prov.page_no for prov in restored.tables[0].prov], [7, 8])
+        self.assertEqual(restored.tables[0].data.table_cells[0].col_span, 2)
+        self.assertEqual(restored.tables[0].data.table_cells[1].text, "0010")
+        options = factory.call_args.kwargs["format_options"][InputFormat.PDF].pipeline_options
+        self.assertFalse(options.do_ocr)
+        self.assertFalse(options.enable_remote_services)
+        self.assertEqual(options.accelerator_options.device.value, "cpu")
+        self.assertEqual(options.layout_options.model_spec.revision, pdf.MODEL_PINS["layout"]["revision"])
+        factory.return_value.convert.assert_called_once_with(self.source, page_range=(7, 8))
+
+    def test_partial_success_is_not_published_as_success(self):
+        with self.assertRaisesRegex(RuntimeError, "did not complete"):
+            self.convert("partial_success")
+
+    def test_missing_requested_page_is_rejected(self):
+        del self.doc.pages[8]
+        with self.assertRaisesRegex(RuntimeError, "every requested page"):
+            self.convert()
+
+    def test_downloader_repairs_corrupt_cache_at_the_pinned_revision(self):
+        pins = {"layout": {"repo_id": "example/model", "revision": "a" * 40,
+                           "files": {"model.safetensors": hashlib.sha256(b"valid").hexdigest()}}}
+        with patch.object(pdf, "MODELS_DIR", Path(self.directory.name)), patch.object(pdf, "MODEL_PINS", pins):
+            target = pdf.MODELS_DIR / "example--model/model.safetensors"
+            target.parent.mkdir()
+            target.write_bytes(b"corrupt")
+            with patch(
+                "huggingface_hub.hf_hub_download", side_effect=lambda **kw: target.write_bytes(b"valid"),
+            ) as fetch:
+                download_parser_models.main()
+                download_parser_models.main()
+            fetch.assert_called_once_with(
+                repo_id="example/model", revision="a" * 40, filename="model.safetensors",
+                local_dir=target.parent, force_download=True,
+            )
+
+
+class ParseCommandTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.output = self.root / "data/processed/result.json"
+        source = self.root / "data/raw/synthetic.pdf"
+        source.parent.mkdir(parents=True)
+        source.write_bytes(b"%PDF-1.4\nsynthetic")
+        manifest = {"sources": [{"id": "SYNTHETIC", "local_path": "data/raw/synthetic.pdf", "pages": 2,
+                                  "bytes": source.stat().st_size, "sha256": pdf.file_sha256(source)}]}
+        (self.root / "data/sources").mkdir()
+        (self.root / "data/sources/manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        self.args = ["--source", "SYNTHETIC", "--pages", "1", "2", "--output", str(self.output)]
+        self.addCleanup(patch.stopall)
+        patch.object(parse_pdf, "ROOT", self.root).start()
+        self.convert = patch.object(parse_pdf, "parse_pdf", return_value={"document": {}}).start()
+
+    def test_writes_local_json_with_verified_source_identity(self):
+        parse_pdf.main(self.args)
+        result = json.loads(self.output.read_text(encoding="utf-8"))
+        self.assertEqual(result["source"]["source_id"], "SYNTHETIC")
+        self.assertEqual(result["source"]["sha256"], pdf.file_sha256(self.root / "data/raw/synthetic.pdf"))
+
+    def test_output_outside_processed_is_rejected_before_parsing(self):
+        with self.assertRaises(SystemExit):
+            parse_pdf.main(self.args[:-1] + [str(self.root / "published.json")])
+        self.convert.assert_not_called()
+
+    def test_existing_output_is_preserved(self):
+        self.output.parent.mkdir(parents=True)
+        self.output.write_text("keep", encoding="utf-8")
+        with self.assertRaises(SystemExit):
+            parse_pdf.main(self.args)
+        self.assertEqual(self.output.read_text(encoding="utf-8"), "keep")
+        self.convert.assert_not_called()
+
+    def test_bad_source_fingerprint_fails_before_parsing(self):
+        (self.root / "data/raw/synthetic.pdf").write_bytes(b"%PDF-1.4\nCORRUPTED")
+        with self.assertRaises(ValueError):
+            parse_pdf.main(self.args)
+        self.convert.assert_not_called()
+
+    def test_invalid_page_ranges_are_rejected_before_parsing(self):
+        for start, end in ((0, 1), (2, 1), (1, 3)):
+            with self.subTest(start=start, end=end), self.assertRaises(SystemExit):
+                parse_pdf.main(["--source", "SYNTHETIC", "--pages", str(start), str(end),
+                                "--output", str(self.output)])
+        self.convert.assert_not_called()
+
+    def test_failed_parse_leaves_no_output(self):
+        self.convert.side_effect = RuntimeError("partial conversion")
+        with self.assertRaises(RuntimeError):
+            parse_pdf.main(self.args)
+        self.assertFalse(self.output.exists())
