@@ -120,7 +120,9 @@ uv run --frozen just down  # 停止服务，保留数据卷
 
 这两个入口已在 [M1-05 Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39795723492) 完成启动、停止、重建和数据回读验证。`just` 不自动加载 `.env`，服务变量由 Docker Compose 读取。
 
-M1-06 的[版本清单](docs/version-lock.md) 记录容器 digest、Docling / Alembic 发布文件指纹、BGE-M3 固定 revision 和最小向量 mapping。包与模型配置已核验指纹；实际解析、迁移、模型推理及业务索引仍待后续任务实现。
+M1-06 的[版本清单](docs/version-lock.md) 记录容器 digest、Docling / Alembic 发布文件指纹、BGE-M3 固定 revision 和最小向量 mapping。包与模型配置已核验指纹；业务迁移、向量模型推理及业务索引仍待后续任务实现。
+
+M1-07 的 [PDF 解析说明](docs/pdf-parsing.md) 提供已登记手册的页范围解析，保留 Docling 原生文档树、表格和物理页码。运行前需安装锁定依赖并下载固定布局/表格模型，结果只写入本地 `data/processed/`；目前仍未切块或入库，`just ingest` 仍保持未实现提示。
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 

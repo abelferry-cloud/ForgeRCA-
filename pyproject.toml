@@ -6,9 +6,13 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
-# No runtime dependencies yet. They arrive with the milestone that needs them
-# (M1-02 onward), so an empty list here is a fact, not a placeholder.
-dependencies = []
+# M1-07: PDF layout and table parsing; other runtime dependencies arrive later.
+dependencies = [
+    "docling==2.142.0",
+    # Direct declarations let uv apply the CPU indexes below to Docling's backend.
+    "torch>=2.2.2,<3",
+    "torchvision<1",
+]
 
 [dependency-groups]
 # Development-only tooling. Runtime code must not import these.
@@ -22,6 +26,16 @@ dev = [
 # This repository is an application and a set of scripts, not a distributable
 # library: there is no build backend and nothing to install as a package.
 package = false
+
+# Use CPU builds for the initial parser and Linux CI, independent of host GPU.
+[tool.uv.sources]
+torch = { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }
+torchvision = { index = "pytorch-cpu", marker = "sys_platform == 'linux' or sys_platform == 'win32'" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.ruff]
 target-version = "py311"

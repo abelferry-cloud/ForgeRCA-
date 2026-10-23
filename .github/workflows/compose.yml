@@ -44,9 +44,9 @@ jobs:
           version: "0.10.12"
       - name: Install locked dev tools and check commands
         run: |
-          uv sync --frozen
-          uv run --frozen python -m unittest discover -s tests -p test_dev_commands.py -v
-          uv run --frozen python -m unittest discover -s tests -p test_version_lock.py -v
+          uv sync --frozen --only-dev
+          uv run --frozen --only-dev python -m unittest discover -s tests -p test_dev_commands.py -v
+          uv run --frozen --only-dev python -m unittest discover -s tests -p test_version_lock.py -v
       - name: Prepare temporary credentials
         shell: bash
         run: |
@@ -61,7 +61,7 @@ jobs:
           python -m unittest discover -s tests -p test_compose.py -v
           sudo sysctl -w vm.max_map_count=262144
           docker compose config --quiet
-          uv run --frozen just up
+          uv run --frozen --only-dev just up
           docker compose ps
       - name: Validate the locked mapping with synthetic vectors
         run: |
@@ -109,8 +109,8 @@ jobs:
           curl --fail --silent --show-error http://127.0.0.1:7474/ > /dev/null
       - name: Recreate containers and verify persisted records
         run: |
-          uv run --frozen just down
-          uv run --frozen just up
+          uv run --frozen --only-dev just down
+          uv run --frozen --only-dev just up
           docker compose exec -T postgres psql -U forgerca -d forgerca -Atc \
             'SELECT value FROM compose_smoke;' | grep -Fx persisted
           curl --fail --silent --show-error http://127.0.0.1:9200/compose-smoke/_doc/1 \
