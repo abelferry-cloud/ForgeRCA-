@@ -81,7 +81,7 @@ flowchart TD
 
 ### 0. 前置条件
 
-- Python **3.11+**；初始化脚本使用标准库，不需要模型 API Key、Docker 或数据库。开发工具（pytest / ruff）由 `uv` 管理，版本锁定在 `uv.lock`。
+- Python **3.11+**；初始化脚本使用标准库，不需要模型 API Key、Docker 或数据库。开发工具（pytest / ruff / just）由 `uv` 管理，版本锁定在 `uv.lock`。
 - 如果后续执行实际检索 / Agent 工作流，将按 [TODO](TODO.md) 引入数据库和模型依赖；**目前没有可运行的诊断 API**。
 
 ```bash
@@ -97,15 +97,28 @@ python -m unittest discover -s tests -v
 python scripts/check_sensitive_files.py
 ```
 
-改动 Python 代码时（M1-01 起），安装锁定版本的开发工具并运行静态检查与测试：
+开发时安装锁定工具，通过 `justfile` 的统一入口运行命令；Windows 使用系统 PowerShell，Linux 使用 `sh`，不需要额外安装 Make 或全局 just：
 
 ```bash
-uv sync
-uv run ruff check .
-uv run pytest
+uv sync --frozen
+uv run --frozen just             # 列出六个命令，不执行任务
+uv run --frozen just lint
+uv run --frozen just test
+uv run --frozen just data-check  # 数据校验通过后，再扫描敏感文件
 ```
 
+`uv run --frozen just ingest` 当前会提示导入尚未实现并返回非零；实际 PDF 解析与导入属于 M1-07～M1-18，不将此入口当作数据导入功能。`data-check` 中任一步失败即停止。2026-10-22 Windows 本地实测上述命令通过，`test` 为 88 passed + 83 subtests；`ingest` 按预期返回 1。
+
 M1-04 的本地数据库配置见 [本地服务说明](docs/local-services.md)，包含三个服务、端口覆盖、启动命令和验收记录。Linux CI 已通过健康检查与容器重建后的数据保留验证；Windows 本机启动仍待验收。目前仍没有应用表结构、索引或诊断 API。
+
+按本地服务说明准备 `.env` 并启动 Docker 后，使用：
+
+```bash
+uv run --frozen just up    # 等待三个服务健康检查通过
+uv run --frozen just down  # 停止服务，保留数据卷
+```
+
+这两个入口已在 [M1-05 Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39795723492) 完成启动、停止、重建和数据回读验证。`just` 不自动加载 `.env`，服务变量由 Docker Compose 读取。
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 
@@ -152,6 +165,7 @@ ForgeRCA-/
 ├── README.md                   # 项目入口与快速开始
 ├── TODO.md                     # 细粒度开发任务 + DoD / 依赖 / 优先级
 ├── CONTRIBUTING.md             # 贡献与提交规范
+├── justfile                    # 统一开发命令（M1-05）
 ├── docs/
 │   ├── project-scope.md        # 业务边界与接口契约（已存在）
 │   ├── architecture.md         # 系统分层、GraphRAG / Agent 方案（已存在）
@@ -199,7 +213,7 @@ ForgeRCA-/
 | 阶段 | 工作重点 | 主要产物 | 状态 |
 | --- | --- | --- | --- |
 | M0 | 来源锁定、合成种子数据、数据校验和文档 | `data/`, `docs/`, 初始化脚本 | 🟡 工程与数据项完成（22/23），仅待人工复核 |
-| M1 | PDF 解析、稳定锚点、Dense-only RAG | 可追溯最小 RAG | 🟡 M1-01～04 底座完成，RAG 待实现 |
+| M1 | PDF 解析、稳定锚点、Dense-only RAG | 可追溯最小 RAG | 🟡 M1-01～05 底座与命令入口完成，RAG 待实现 |
 | M2 | BM25 + Dense + RRF + BGE-Reranker | 混合检索与版本过滤 | ⬜ 待实现 |
 | M3 | 信息抽取、实体消歧、图谱证据追溯 | Neo4j GraphRAG | ⬜ 待实现 |
 | M4 | LangGraph 补检与 Langfuse 追踪 | Agent 诊断报告与 trace | ⬜ 待实现 |
