@@ -5,6 +5,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
+from app.ingestion.chunking import chunk_document
 from app.ingestion.fault_codes import extract_fault_codes
 from app.ingestion.pdf import parse_pdf
 from app.schemas.document import document_keys
@@ -39,6 +40,7 @@ def main(argv=None):
     result = parse_pdf(path, (start, end))
     result["source"] = {"document_key": document_key.value, **asdict(document_key)}
     result["fault_codes"] = extract_fault_codes(result["document"])
+    result["chunks"] = chunk_document(result["document"], document_key.value)
     serialized = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("x", encoding="utf-8", newline="\n") as stream:

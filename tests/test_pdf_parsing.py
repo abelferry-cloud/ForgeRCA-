@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from app.ingestion import pdf
+from app.ingestion.chunking import chunk_document
 from scripts import download_parser_models, parse_pdf
 
 
@@ -99,6 +100,14 @@ class DoclingContractTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "did not complete"):
             self.convert("partial_success")
 
+    def test_native_docling_tree_can_be_chunked_without_losing_table_context(self):
+        result, _ = self.convert()
+        chunks = chunk_document(result["document"], "synthetic-document")
+        self.assertEqual([chunk["chunk_type"] for chunk in chunks], ["section", "table", "section"])
+        self.assertEqual([chunk["section"] for chunk in chunks], [["Title"]] * 3)
+        self.assertIn("0010\tSynthetic action", chunks[1]["text"])
+        self.assertTrue(chunks[2]["text"].endswith("After table\nNext page"))
+
     def test_missing_requested_page_is_rejected(self):
         del self.doc.pages[8]
         with self.assertRaisesRegex(RuntimeError, "every requested page"):
@@ -152,6 +161,7 @@ class ParseCommandTests(unittest.TestCase):
             "sha256": digest, "source_url": "https://example.com/synthetic.pdf", "accessed_at": "2026-10-28",
         })
         self.assertEqual(result["fault_codes"], [])
+        self.assertEqual(result["chunks"], [])
 
     def test_serializes_raw_and_normalized_fault_codes_without_changing_cells(self):
         cells = []
@@ -162,7 +172,9 @@ class ParseCommandTests(unittest.TestCase):
                 "start_row_offset_idx": row, "end_row_offset_idx": row + 1,
                 "start_col_offset_idx": column, "end_col_offset_idx": column + 1,
             })
-        document = {"tables": [{"self_ref": "#/tables/0", "data": {"table_cells": cells}}]}
+        document = {"body": {"children": [{"$ref": "#/tables/0"}]},
+                    "tables": [{"self_ref": "#/tables/0", "label": "table",
+                                "data": {"num_rows": 2, "num_cols": 2, "table_cells": cells}}]}
         self.convert.return_value = {"document": document}
         parse_pdf.main(self.args)
         result = json.loads(self.output.read_text(encoding="utf-8"))
@@ -170,6 +182,10 @@ class ParseCommandTests(unittest.TestCase):
             "raw_code": " 00a1 ", "normalized_code": "00A1", "cell_ref": "#/tables/0/data/table_cells/2",
         }])
         self.assertEqual(result["document"]["tables"][0]["data"]["table_cells"][2]["text"], " 00a1 ")
+        self.assertEqual(len(result["chunks"]), 1)
+        self.assertEqual(result["chunks"][0]["document_key"], result["source"]["document_key"])
+        self.assertEqual(result["chunks"][0]["fault_codes"], result["fault_codes"])
+        self.assertIn(" 00a1 \t0002", result["chunks"][0]["text"])
 
     def test_different_page_ranges_share_the_same_document_key(self):
         parse_pdf.main(self.args)
