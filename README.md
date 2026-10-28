@@ -122,7 +122,7 @@ uv run --frozen just down  # 停止服务，保留数据卷
 
 M1-06 的[版本清单](docs/version-lock.md) 记录容器 digest、Docling / Alembic 发布文件指纹、BGE-M3 固定 revision 和最小向量 mapping。包与模型配置已核验指纹；业务迁移、向量模型推理及业务索引仍待后续任务实现。
 
-M1-07 的 [PDF 解析说明](docs/pdf-parsing.md) 提供已登记手册的页范围解析，保留 Docling 原生文档树、表格和物理页码。运行前需安装锁定依赖并下载固定布局/表格模型，结果只写入本地 `data/processed/`；目前仍未切块或入库，`just ingest` 仍保持未实现提示。
+M1-07～10 的 [PDF 解析说明](docs/pdf-parsing.md) 提供已登记手册的页范围解析、文档身份、主故障码规范化与章节/故障表行组切块，保留 Docling 原生文档树、表格和物理页码。运行前需安装锁定依赖并下载固定布局/表格模型，结果只写入本地 `data/processed/`；稳定证据 ID 与入库仍待实现，`just ingest` 仍保持未实现提示。
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 

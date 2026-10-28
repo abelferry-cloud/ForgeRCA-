@@ -1,6 +1,6 @@
-# PDF 结构化解析、文档身份与故障码（M1-07～09）
+# PDF 结构化解析与语义切块（M1-07～10）
 
-当前提供已登记 ABB 手册的物理页范围解析。使用 Docling 2.142.0，保留原生文档树、标题/正文标签、表格单元格与页码来源；没有切块、稳定证据 ID、业务入库或检索。适用对象是带原生文字层的 PDF；OCR 关闭，扫描页不在本次验收范围。
+当前提供已登记 ABB 手册的物理页范围解析及章节/故障表行组切块。使用 Docling 2.142.0，保留原生文档树、标题/正文标签、表格单元格与页码来源；尚无稳定证据 ID、业务入库或检索。适用对象是带原生文字层的 PDF；OCR 关闭，扫描页不在本次验收范围。
 
 ## 准备与运行
 
@@ -35,10 +35,13 @@ uv run --frozen python -m scripts.parse_pdf --source ABB-HW-D-ZH --pages 152 152
 - `parser`：实际 Docling / docling-core / docling-parse 版本、页范围、选用参数及模型 revision/文件指纹。
 - `document`：原生 `DoclingDocument` JSON，不将文本与表格转成一个丢失结构的字符串。
 - `fault_codes`：明确故障表编码列中的主故障码；每项保留 `raw_code`、`normalized_code` 和相对于 `document` 的 `cell_ref`。原始单元格不改写；具体识别边界见 [故障码规范](data-spec.md#故障码原值与规范化值m1-09)。
+- `chunks`：按阅读顺序输出的章节/表格块，保留标题上下文、父文档主键和解析内引用；故障表的原因、措施及附属辅助码行保持在同一行组。字段与限制见 [切块规范](data-spec.md#章节与故障表行组切块m1-10)。
 
 M1-08 为 `source` 增加元数据，保留原有 `source_id` / `sha256`；外层 `schema_version=1` 和 Docling 文档结构不变。旧的本地解析文件不会自动改写；需要文档主键时，用新文件名重新运行上述命令。主键仅随来源 ID、修订或文件摘要变化，同一 PDF 选择不同页范围仍属于同一文档。来源元数据缺失或冲突会在模型推理前失败。
 
 M1-09 增加 `fault_codes` 列表，外层仍为 `schema_version=1`；旧文件缺少此字段不等于检测结果为空，需要该字段时重新运行解析命令并指定新文件名。它只识别当前已验证的故障表格式：正文和辅助码列不扫描，无表头续表不猜测。空列表不能用于断言该页没有故障码。
+
+M1-10 增加 `chunks` 列表，外层仍为 `schema_version=1`。旧文件缺少此字段不表示没有可切分内容；需要完整新输出时使用新文件名重新运行上述命令。切块属于解析后的本地派生步骤，不会开放 `data/processed/` 的检索 allowlist，也不改变 `just ingest` 的未实现状态。
 
 文档中的 `body` 树保存交错阅读顺序，`texts` / `tables` 是按类型存储的集合，不能通过拼接这两个数组恢复阅读顺序。按 [Docling 文档模型](https://docling-project.github.io/docling/concepts/docling_document/) 遍历：
 
@@ -66,7 +69,7 @@ for item, level in document.iterate_items():
 uv run --frozen python -m unittest discover -s tests -p test_pdf_parsing.py -v
 ```
 
-`.github/workflows/pdf-parser.yml` 在 Linux / Python 3.11 安装锁定的 CPU 依赖，运行上述离线契约测试；[首次 CI 运行](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39929017180) 的 11 项测试全部通过。标准库数据 CI 仍可运行，没有 Docling 时明确跳过其四项契约测试。Compose CI 只安装开发工具，不承担 PDF 推理验证。
+`.github/workflows/pdf-parser.yml` 在 Linux / Python 3.11 安装锁定的 CPU 依赖，运行上述离线契约测试；[首次 CI 运行](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39929017180) 的 11 项测试全部通过。标准库数据 CI 仍可运行，没有 Docling 时明确跳过其五项契约测试（含 M1-10 的原生文档切块契约）。Compose CI 只安装开发工具，不承担 PDF 推理验证。
 
 2026-10-23 在 Windows / Python 3.12.10 上，通过上述 CLI 解析了已验原文件指纹的 4 个物理页；模型五个文件的 SHA-256 全部匹配，推理时设置 `HF_HUB_OFFLINE=1` 与 `TRANSFORMERS_OFFLINE=1`。对照本地渲染页面检查结构：
 
@@ -87,4 +90,8 @@ M1-09 的 `tests/test_fault_codes.py` 使用自造单元格检查前导零、ASC
 
 2026-10-28 在同一本地锁定环境、离线模型模式下重新运行固件手册 536–538 页解析，输出到忽略文件 `data/processed/m1-09-firmware-536-538.json`。回读得到 18 个主故障码（536 页 2 个、537 页 5 个、538 页 11 个），含 `42F1`；逐项 `cell_ref` 均能回到对应原始码值，父文档身份与物理页号匹配。辅助码列中的 `0001`、`0002`、`0004`、`0008`、`0010`、`0020`、`0040`、`0080` 未混入主码列表。该结果只覆盖三页样本，不是全量召回率。
 
-后续仍需实现：M1-10 切块、M1-11 稳定证据 ID、M1-12 印刷页码与段落/表行定位、M1-13 质量测试、M1-14 增量识别，以及 M1-15 人工抽样和 M1-16 安全标签。此次技术检查不替代人工或领域专家复核。
+M1-10 的 `tests/test_chunking.py` 覆盖阅读树顺序、标题层级、警告与列表上下文、原因/措施同行、九行共享措施、未识别主码隔离、前置无主码行、普通表保留和引用回读；PDF 契约测试另检查真实 Docling 数据结构和 CLI 的 `chunks` 序列化。自造测试不提交厂商原文。
+
+2026-10-28 用上述 CLI 在离线模型模式下重新解析固件 536–538 页、硬件 152 页，分别保存为忽略的 `data/processed/m1-10-firmware-536-538.json` 和 `data/processed/m1-10-hardware-152.json`。固件形成 18 个故障行组，`2340` 的辅助行和跨九行措施保留在同一块；硬件形成 1 个章节块，保留两处警告、四个有编号的步骤和两处图片引用。19 个块的父文档主键、内容/标题引用及原文完整保留检查均通过；共享措施在所属块内仅出现一次。该检查覆盖既有四页样本，不代表全量切块质量或人工领域复核。
+
+后续仍需实现：M1-11 稳定证据 ID、M1-12 印刷页码与段落/表行定位、M1-13 质量测试、M1-14 增量识别，以及 M1-15 人工抽样和 M1-16 安全标签。此次技术检查不替代人工或领域专家复核。
