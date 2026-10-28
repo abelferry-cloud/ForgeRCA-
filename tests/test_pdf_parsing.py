@@ -132,6 +132,8 @@ class ParseCommandTests(unittest.TestCase):
         source.parent.mkdir(parents=True)
         source.write_bytes(b"%PDF-1.4\nsynthetic")
         manifest = {"sources": [{"id": "SYNTHETIC", "local_path": "data/raw/synthetic.pdf", "pages": 2,
+                                  "document_code": "SYNTHETIC-MANUAL", "revision": "A", "firmware_scope": None,
+                                  "url": "https://example.com/synthetic.pdf", "accessed_at": "2026-10-28",
                                   "bytes": source.stat().st_size, "sha256": pdf.file_sha256(source)}]}
         (self.root / "data/sources").mkdir()
         (self.root / "data/sources/manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -143,8 +145,39 @@ class ParseCommandTests(unittest.TestCase):
     def test_writes_local_json_with_verified_source_identity(self):
         parse_pdf.main(self.args)
         result = json.loads(self.output.read_text(encoding="utf-8"))
-        self.assertEqual(result["source"]["source_id"], "SYNTHETIC")
-        self.assertEqual(result["source"]["sha256"], pdf.file_sha256(self.root / "data/raw/synthetic.pdf"))
+        digest = pdf.file_sha256(self.root / "data/raw/synthetic.pdf")
+        self.assertEqual(result["source"], {
+            "document_key": f"SYNTHETIC@A:{digest}", "source_id": "SYNTHETIC",
+            "document_code": "SYNTHETIC-MANUAL", "revision": "A", "firmware_scope": None,
+            "sha256": digest, "source_url": "https://example.com/synthetic.pdf", "accessed_at": "2026-10-28",
+        })
+
+    def test_different_page_ranges_share_the_same_document_key(self):
+        parse_pdf.main(self.args)
+        first = json.loads(self.output.read_text(encoding="utf-8"))
+        second_path = self.output.with_name("second.json")
+        parse_pdf.main(["--source", "SYNTHETIC", "--pages", "2", "2", "--output", str(second_path)])
+        second = json.loads(second_path.read_text(encoding="utf-8"))
+        self.assertEqual(first["source"], second["source"])
+
+    def test_missing_document_metadata_fails_before_parsing(self):
+        path = self.root / "data/sources/manifest.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        del manifest["sources"][0]["firmware_scope"]
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Invalid firmware_scope"):
+            parse_pdf.main(self.args)
+        self.convert.assert_not_called()
+        self.assertFalse(self.output.exists())
+
+    def test_ambiguous_source_selection_fails_before_parsing(self):
+        path = self.root / "data/sources/manifest.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        manifest["sources"].append({**manifest["sources"][0], "revision": "B", "sha256": "1" * 64})
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Source IDs must be unique"):
+            parse_pdf.main(self.args)
+        self.convert.assert_not_called()
 
     def test_output_outside_processed_is_rejected_before_parsing(self):
         with self.assertRaises(SystemExit):

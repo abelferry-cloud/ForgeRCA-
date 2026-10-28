@@ -2,9 +2,11 @@
 
 import argparse
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 from app.ingestion.pdf import parse_pdf
+from app.schemas.document import document_keys
 from scripts.download_sources import verify_file
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -12,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main(argv=None):
     sources = json.loads((ROOT / "data/sources/manifest.json").read_text(encoding="utf-8"))["sources"]
+    documents = {key.source_id: key for key in document_keys(sources).values()}
+    if len(documents) != len(sources):
+        raise ValueError("Source IDs must be unique for --source selection")
     sources = {source["id"]: source for source in sources}
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", required=True, choices=sources)
@@ -19,6 +24,7 @@ def main(argv=None):
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args(argv)
     source = sources[args.source]
+    document_key = documents[args.source]
     start, end = args.pages
     if not 1 <= start <= end <= source["pages"]:
         parser.error(f"Pages must satisfy 1 <= start <= end <= {source['pages']}")
@@ -30,7 +36,7 @@ def main(argv=None):
     path = ROOT / source["local_path"]
     verify_file(path, source)
     result = parse_pdf(path, (start, end))
-    result["source"] = {"source_id": source["id"], "sha256": source["sha256"]}
+    result["source"] = {"document_key": document_key.value, **asdict(document_key)}
     serialized = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("x", encoding="utf-8", newline="\n") as stream:
