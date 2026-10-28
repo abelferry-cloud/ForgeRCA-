@@ -1,4 +1,4 @@
-# PDF 结构化解析与文档身份（M1-07～08）
+# PDF 结构化解析、文档身份与故障码（M1-07～09）
 
 当前提供已登记 ABB 手册的物理页范围解析。使用 Docling 2.142.0，保留原生文档树、标题/正文标签、表格单元格与页码来源；没有切块、稳定证据 ID、业务入库或检索。适用对象是带原生文字层的 PDF；OCR 关闭，扫描页不在本次验收范围。
 
@@ -34,8 +34,11 @@ uv run --frozen python -m scripts.parse_pdf --source ABB-HW-D-ZH --pages 152 152
 - `source`：文档主键 `document_key`、`source_id`、文档编号 `document_code`、修订 `revision`、固件适用性 `firmware_scope`、完整 `sha256`、下载来源 `source_url` 和访问日期 `accessed_at`。字段规则见 [文档身份](data-spec.md#文档身份m1-08)。
 - `parser`：实际 Docling / docling-core / docling-parse 版本、页范围、选用参数及模型 revision/文件指纹。
 - `document`：原生 `DoclingDocument` JSON，不将文本与表格转成一个丢失结构的字符串。
+- `fault_codes`：明确故障表编码列中的主故障码；每项保留 `raw_code`、`normalized_code` 和相对于 `document` 的 `cell_ref`。原始单元格不改写；具体识别边界见 [故障码规范](data-spec.md#故障码原值与规范化值m1-09)。
 
 M1-08 为 `source` 增加元数据，保留原有 `source_id` / `sha256`；外层 `schema_version=1` 和 Docling 文档结构不变。旧的本地解析文件不会自动改写；需要文档主键时，用新文件名重新运行上述命令。主键仅随来源 ID、修订或文件摘要变化，同一 PDF 选择不同页范围仍属于同一文档。来源元数据缺失或冲突会在模型推理前失败。
+
+M1-09 增加 `fault_codes` 列表，外层仍为 `schema_version=1`；旧文件缺少此字段不等于检测结果为空，需要该字段时重新运行解析命令并指定新文件名。它只识别当前已验证的故障表格式：正文和辅助码列不扫描，无表头续表不猜测。空列表不能用于断言该页没有故障码。
 
 文档中的 `body` 树保存交错阅读顺序，`texts` / `tables` 是按类型存储的集合，不能通过拼接这两个数组恢复阅读顺序。按 [Docling 文档模型](https://docling-project.github.io/docling/concepts/docling_document/) 遍历：
 
@@ -80,4 +83,8 @@ M1-08 的专项测试位于 `tests/test_document_key.py`；解析命令测试另
 
 2026-10-28 在 Windows / Python 3.12.10 上以离线模式重新解析硬件手册第 152 页，输出为本地忽略文件 `data/processed/m1-08-hardware-152.json`。回读确认 `source` 的全部 8 个字段与来源清单及主键规则一致，`schema_version=1`、请求页范围与物理页 152 保留；这是身份字段的集成验收，不新增解析质量或领域复核结论。
 
-后续仍需实现：M1-09 故障码规范化、M1-10 切块、M1-11 稳定证据 ID、M1-12 印刷页码与段落/表行定位、M1-13 质量测试、M1-14 增量识别，以及 M1-15 人工抽样和 M1-16 安全标签。此次技术检查不替代人工或领域专家复核。
+M1-09 的 `tests/test_fault_codes.py` 使用自造单元格检查前导零、ASCII 大小写、原值保留、非法值拒绝、主码/辅助码列隔离、普通表排除及本次解析内的引用解析；`tests/test_pdf_parsing.py` 检查 CLI 序列化同时保留两个码值和原文。
+
+2026-10-28 在同一本地锁定环境、离线模型模式下重新运行固件手册 536–538 页解析，输出到忽略文件 `data/processed/m1-09-firmware-536-538.json`。回读得到 18 个主故障码（536 页 2 个、537 页 5 个、538 页 11 个），含 `42F1`；逐项 `cell_ref` 均能回到对应原始码值，父文档身份与物理页号匹配。辅助码列中的 `0001`、`0002`、`0004`、`0008`、`0010`、`0020`、`0040`、`0080` 未混入主码列表。该结果只覆盖三页样本，不是全量召回率。
+
+后续仍需实现：M1-10 切块、M1-11 稳定证据 ID、M1-12 印刷页码与段落/表行定位、M1-13 质量测试、M1-14 增量识别，以及 M1-15 人工抽样和 M1-16 安全标签。此次技术检查不替代人工或领域专家复核。

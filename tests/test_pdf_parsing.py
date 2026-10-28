@@ -151,6 +151,25 @@ class ParseCommandTests(unittest.TestCase):
             "document_code": "SYNTHETIC-MANUAL", "revision": "A", "firmware_scope": None,
             "sha256": digest, "source_url": "https://example.com/synthetic.pdf", "accessed_at": "2026-10-28",
         })
+        self.assertEqual(result["fault_codes"], [])
+
+    def test_serializes_raw_and_normalized_fault_codes_without_changing_cells(self):
+        cells = []
+        for text, row, column, header in (("编码（hex）", 0, 0, True), ("故障/辅助代码", 0, 1, True),
+                                          (" 00a1 ", 1, 0, False), ("0002", 1, 1, False)):
+            cells.append({
+                "text": text, "column_header": header,
+                "start_row_offset_idx": row, "end_row_offset_idx": row + 1,
+                "start_col_offset_idx": column, "end_col_offset_idx": column + 1,
+            })
+        document = {"tables": [{"self_ref": "#/tables/0", "data": {"table_cells": cells}}]}
+        self.convert.return_value = {"document": document}
+        parse_pdf.main(self.args)
+        result = json.loads(self.output.read_text(encoding="utf-8"))
+        self.assertEqual(result["fault_codes"], [{
+            "raw_code": " 00a1 ", "normalized_code": "00A1", "cell_ref": "#/tables/0/data/table_cells/2",
+        }])
+        self.assertEqual(result["document"]["tables"][0]["data"]["table_cells"][2]["text"], " 00a1 ")
 
     def test_different_page_ranges_share_the_same_document_key(self):
         parse_pdf.main(self.args)
