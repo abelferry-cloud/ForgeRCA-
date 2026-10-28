@@ -1,6 +1,8 @@
 """Regression checks for corrupt provenance and evaluation leakage."""
 
 import hashlib
+import subprocess
+import sys
 import tempfile
 import unittest
 from copy import deepcopy
@@ -19,6 +21,29 @@ class DataValidationTests(unittest.TestCase):
 
     def test_seed_is_consistent(self):
         self.assertEqual(validate(self.data)["questions"], 17)
+
+    def test_direct_script_works_without_repository_on_pythonpath(self):
+        script = Path(__file__).resolve().parents[1] / "scripts/validate_data.py"
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(
+                [sys.executable, "-I", str(script)], cwd=directory,
+                capture_output=True, text=True, encoding="utf-8", timeout=20,
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('"sources": 2', result.stdout)
+
+    def test_missing_document_metadata_is_rejected(self):
+        for field in ("document_code", "revision", "url", "accessed_at"):
+            with self.subTest(field=field):
+                data = deepcopy(self.seed)
+                del data["sources"][0][field]
+                with self.assertRaisesRegex(ValueError, f"Invalid {field}"):
+                    validate(data)
+
+    def test_duplicate_document_bytes_are_rejected(self):
+        self.data["sources"][1]["sha256"] = self.data["sources"][0]["sha256"]
+        with self.assertRaisesRegex(ValueError, "Duplicate document digest"):
+            validate(self.data)
 
     def test_missing_gold_evidence_is_rejected(self):
         self.data["evaluations"]["dev"][0]["gold_evidence_ids"] = ["MISSING"]

@@ -4,10 +4,17 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Keep the documented direct-script command usable without installing app.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(ROOT))
+
+from app.schemas.document import document_keys  # noqa: E402
+
 CORPUS_FILES = {
     "knowledge_note": "data/corpus/knowledge.jsonl",
     "work_order": "data/corpus/work_orders.jsonl",
@@ -90,6 +97,8 @@ def validate(data):
         require(source["bytes"] > 0 and source["pages"] > 0, "Invalid source dimensions")
         require(source["redistribution"] == "not_verified", "Review source redistribution changes explicitly")
         require(source["verification"] == "downloaded_hash_and_text_checked", "Unverified source")
+    # Validate document identity metadata and reject ambiguous source entries.
+    document_keys(data["sources"])
     records = [record for group in data["corpus"].values() for record in group]
     evidence = unique(records, "evidence")
     for kind, group in data["corpus"].items():
