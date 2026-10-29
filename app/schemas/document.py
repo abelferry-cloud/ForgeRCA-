@@ -40,6 +40,7 @@ __all__ = [
     "ParsedKey",
     "document_keys",
     "parse_key",
+    "printed_page_labels",
 ]
 
 
@@ -126,6 +127,32 @@ def document_keys(sources: Iterable[Mapping[str, Any]]) -> dict[str, DocumentKey
         revisions[slot] = key
         digests[key.sha256] = key
     return keys
+
+
+def printed_page_labels(source: Mapping[str, Any]) -> dict[int, str]:
+    """Read only explicit, fingerprint-bound labels; never infer a page offset."""
+    if "printed_page_map" not in source:
+        return {}
+    mapping = source["printed_page_map"]
+    if not isinstance(mapping, dict) or mapping.get("sha256") != source.get("sha256"):
+        raise ValueError("Printed page map must match the source SHA-256")
+    reference = mapping.get("verification_ref")
+    if not isinstance(reference, str) or not reference.strip() or reference != reference.strip():
+        raise ValueError("Printed page map requires a verification reference")
+    pages = mapping.get("pages")
+    total = source.get("pages")
+    verified = source.get("verified_pdf_pages", [])
+    if (not isinstance(pages, dict) or type(total) is not int or total < 1
+            or not isinstance(verified, list) or any(type(page) is not int for page in verified)):
+        raise ValueError("Invalid printed page map or source pages")
+    labels = {}
+    for page, label in pages.items():
+        if (not isinstance(page, str) or not re.fullmatch(r"[1-9][0-9]*", page)
+                or not 1 <= int(page) <= total or int(page) not in verified
+                or not isinstance(label, str) or not re.fullmatch(r"\S+", label)):
+            raise ValueError("Printed page labels require verified physical pages and nonempty strings")
+        labels[int(page)] = label
+    return labels
 
 
 def _label(source: Mapping[str, Any]) -> str:

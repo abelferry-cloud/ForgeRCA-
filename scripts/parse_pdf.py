@@ -8,8 +8,9 @@ from pathlib import Path
 from app.ingestion.chunking import chunk_document
 from app.ingestion.evidence import identify_chunk
 from app.ingestion.fault_codes import extract_fault_codes
+from app.ingestion.metadata import locate_chunk
 from app.ingestion.pdf import parse_pdf
-from app.schemas.document import document_keys
+from app.schemas.document import document_keys, printed_page_labels
 from scripts.download_sources import verify_file
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +28,7 @@ def main(argv=None):
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args(argv)
     source = sources[args.source]
+    printed_page_labels(source)
     document_key = documents[args.source]
     start, end = args.pages
     if not 1 <= start <= end <= source["pages"]:
@@ -40,8 +42,10 @@ def main(argv=None):
     verify_file(path, source)
     result = parse_pdf(path, (start, end))
     result["source"] = {"document_key": document_key.value, **asdict(document_key)}
+    if "printed_page_map" in source:
+        result["source"]["printed_page_map"] = source["printed_page_map"]
     result["fault_codes"] = extract_fault_codes(result["document"])
-    result["chunks"] = [identify_chunk(result["document"], chunk)
+    result["chunks"] = [locate_chunk(identify_chunk(result["document"], chunk), source)
                         for chunk in chunk_document(result["document"], document_key.value)]
     serialized = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
     output.parent.mkdir(parents=True, exist_ok=True)
