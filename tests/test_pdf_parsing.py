@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from app.ingestion import pdf
 from app.ingestion.chunking import chunk_document
+from app.ingestion.evidence import identify_chunk
 from scripts import download_parser_models, parse_pdf
 
 
@@ -51,7 +52,8 @@ class DoclingContractTests(unittest.TestCase):
         self.doc = DoclingDocument(name="synthetic")
         for page in (7, 8):
             self.doc.add_page(page_no=page, size=Size(width=200, height=300))
-        prov = ProvenanceItem(page_no=7, bbox=BoundingBox(l=0, t=30, r=100, b=0), charspan=(0, 5))
+        prov = ProvenanceItem(page_no=7, bbox=BoundingBox(l=0, t=30, r=100, b=0, coord_origin="BOTTOMLEFT"),
+                              charspan=(0, 5))
         self.doc.add_heading(text="Title", prov=prov)
         self.doc.add_text(label=DocItemLabel.TEXT, text="Before table", prov=prov)
         cells = [
@@ -107,6 +109,14 @@ class DoclingContractTests(unittest.TestCase):
         self.assertEqual([chunk["section"] for chunk in chunks], [["Title"]] * 3)
         self.assertIn("0010\tSynthetic action", chunks[1]["text"])
         self.assertTrue(chunks[2]["text"].endswith("After table\nNext page"))
+
+    def test_native_provenance_has_the_same_identity_before_and_after_json_serialization(self):
+        result, _ = self.convert()
+        chunks = chunk_document(result["document"], "SYNTHETIC@A:" + "0" * 64)
+        identified = identify_chunk(result["document"], chunks[0])
+        restored = json.loads(json.dumps(result))["document"]
+        self.assertEqual(identified["evidence_id"], identify_chunk(restored, chunks[0])["evidence_id"])
+        self.assertEqual(identified["evidence_locator"]["elements"][0]["pdf_page"], 7)
 
     def test_missing_requested_page_is_rejected(self):
         del self.doc.pages[8]
@@ -171,9 +181,12 @@ class ParseCommandTests(unittest.TestCase):
                 "text": text, "column_header": header,
                 "start_row_offset_idx": row, "end_row_offset_idx": row + 1,
                 "start_col_offset_idx": column, "end_col_offset_idx": column + 1,
+                "bbox": {"l": column * 50, "t": row * 20, "r": column * 50 + 40,
+                         "b": row * 20 + 10, "coord_origin": "TOPLEFT"},
             })
         document = {"body": {"children": [{"$ref": "#/tables/0"}]},
-                    "tables": [{"self_ref": "#/tables/0", "label": "table",
+                    "pages": {"1": {"page_no": 1, "size": {"width": 200, "height": 300}}},
+                    "tables": [{"self_ref": "#/tables/0", "label": "table", "prov": [{"page_no": 1}],
                                 "data": {"num_rows": 2, "num_cols": 2, "table_cells": cells}}]}
         self.convert.return_value = {"document": document}
         parse_pdf.main(self.args)
@@ -186,6 +199,17 @@ class ParseCommandTests(unittest.TestCase):
         self.assertEqual(result["chunks"][0]["document_key"], result["source"]["document_key"])
         self.assertEqual(result["chunks"][0]["fault_codes"], result["fault_codes"])
         self.assertIn(" 00a1 \t0002", result["chunks"][0]["text"])
+        self.assertRegex(result["chunks"][0]["evidence_id"], r"^ev1:[0-9a-f]{64}$")
+        self.assertEqual(result["chunks"][0]["evidence_locator"]["sha256"], result["source"]["sha256"])
+
+    def test_missing_evidence_provenance_leaves_no_output(self):
+        self.convert.return_value = {"document": {
+            "body": {"children": [{"$ref": "#/texts/0"}]},
+            "texts": [{"self_ref": "#/texts/0", "label": "text", "text": "unanchored", "children": []}],
+        }}
+        with self.assertRaisesRegex(ValueError, "provenance"):
+            parse_pdf.main(self.args)
+        self.assertFalse(self.output.exists())
 
     def test_different_page_ranges_share_the_same_document_key(self):
         parse_pdf.main(self.args)

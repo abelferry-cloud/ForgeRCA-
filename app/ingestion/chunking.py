@@ -71,7 +71,7 @@ def _table_chunks(table, codes):
 
 
 def chunk_document(document: dict, document_key: str) -> list[dict]:
-    """Keep source references local; stable evidence IDs belong to M1-11.
+    """Keep source references local; evidence.identify_chunk adds stable IDs.
 
     Sections have no arbitrary size cutoff. Tables interrupt prose and remain
     separate across table/page boundaries; no continuation text is guessed.
