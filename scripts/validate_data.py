@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if __package__ in (None, ""):
     sys.path.insert(0, str(ROOT))
 
-from app.schemas.document import document_keys  # noqa: E402
+from app.schemas.document import document_keys, printed_page_labels  # noqa: E402
 
 CORPUS_FILES = {
     "knowledge_note": "data/corpus/knowledge.jsonl",
@@ -99,6 +99,8 @@ def validate(data):
         require(source["verification"] == "downloaded_hash_and_text_checked", "Unverified source")
     # Validate document identity metadata and reject ambiguous source entries.
     document_keys(data["sources"])
+    for source in sources.values():
+        printed_page_labels(source)
     records = [record for group in data["corpus"].values() for record in group]
     evidence = unique(records, "evidence")
     for kind, group in data["corpus"].items():

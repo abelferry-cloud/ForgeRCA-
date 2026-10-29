@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "sources": [
     {
       "id": "ABB-FW-H-ZH",
@@ -19,6 +19,11 @@
       "accessed_at": "2026-10-13",
       "redistribution": "not_verified",
       "verification": "downloaded_hash_and_text_checked",
+      "printed_page_map": {
+        "sha256": "e6ed9eab8c6a06afc0411a7ab11ace174e56385f9c554a221c3309571e4eb2b6",
+        "verification_ref": "data/sources/verification-2026-10-13.md",
+        "pages": {"13": "13", "536": "536", "537": "537", "538": "538", "542": "542"}
+      },
       "verified_pdf_pages": [
         3,
         13,
@@ -46,6 +51,11 @@
       "accessed_at": "2026-10-13",
       "redistribution": "not_verified",
       "verification": "downloaded_hash_and_text_checked",
+      "printed_page_map": {
+        "sha256": "c2aa260efb335368930df8bd5ea44c8fd715fa1a845cc344fcfd089a870a2ece",
+        "verification_ref": "data/sources/verification-2026-10-13.md",
+        "pages": {"25": "25", "152": "152"}
+      },
       "verified_pdf_pages": [
         3,
         25,

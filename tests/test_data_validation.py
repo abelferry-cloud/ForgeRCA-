@@ -22,6 +22,13 @@ class DataValidationTests(unittest.TestCase):
     def test_seed_is_consistent(self):
         self.assertEqual(validate(self.data)["questions"], 17)
 
+    def test_stale_or_unverified_printed_page_mapping_is_rejected(self):
+        for field, value in (("sha256", "0" * 64), ("pages", {"1": "1"})):
+            data = deepcopy(self.seed)
+            data["sources"][0]["printed_page_map"][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "Printed page"):
+                validate(data)
+
     def test_direct_script_works_without_repository_on_pythonpath(self):
         script = Path(__file__).resolve().parents[1] / "scripts/validate_data.py"
         with tempfile.TemporaryDirectory() as directory:

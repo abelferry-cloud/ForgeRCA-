@@ -1,6 +1,6 @@
-# PDF 结构化解析、语义切块与证据 ID（M1-07～11）
+# PDF 结构化解析、切块与证据定位（M1-07～12）
 
-当前提供已登记 ABB 手册的物理页范围解析、章节/故障表行组切块及基于物理定位的稳定证据 ID。使用 Docling 2.142.0，保留原生文档树、标题/正文标签、表格单元格与页码来源；尚无业务入库或检索。适用对象是带原生文字层的 PDF；OCR 关闭，扫描页不在本次验收范围。
+当前提供已登记 ABB 手册的物理页范围解析、章节/故障表行组切块、稳定证据 ID 及页码/表行定位元数据。使用 Docling 2.142.0，保留原生文档树、标题/正文标签、表格单元格与页码来源；尚无业务入库或检索。适用对象是带原生文字层的 PDF；OCR 关闭，扫描页不在本次验收范围。
 
 ## 准备与运行
 
@@ -31,7 +31,7 @@ uv run --frozen python -m scripts.parse_pdf --source ABB-HW-D-ZH --pages 152 152
 
 每份结果包含：
 
-- `source`：文档主键 `document_key`、`source_id`、文档编号 `document_code`、修订 `revision`、固件适用性 `firmware_scope`、完整 `sha256`、下载来源 `source_url` 和访问日期 `accessed_at`。字段规则见 [文档身份](data-spec.md#文档身份m1-08)。
+- `source`：文档主键 `document_key`、`source_id`、文档编号 `document_code`、修订 `revision`、固件适用性 `firmware_scope`、完整 `sha256`、下载来源 `source_url` 和访问日期 `accessed_at`；来源登记了印刷页映射时，另保留 `printed_page_map` 快照。字段规则见 [文档身份](data-spec.md#文档身份m1-08) 和 [定位元数据](data-spec.md#页码章节和表行元数据m1-12)。
 - `parser`：实际 Docling / docling-core / docling-parse 版本、页范围、选用参数及模型 revision/文件指纹。
 - `document`：原生 `DoclingDocument` JSON，不将文本与表格转成一个丢失结构的字符串。
 - `fault_codes`：明确故障表编码列中的主故障码；每项保留 `raw_code`、`normalized_code` 和相对于 `document` 的 `cell_ref`。原始单元格不改写；具体识别边界见 [故障码规范](data-spec.md#故障码原值与规范化值m1-09)。
@@ -44,6 +44,8 @@ M1-09 增加 `fault_codes` 列表，外层仍为 `schema_version=1`；旧文件�
 M1-10 增加 `chunks` 列表，外层仍为 `schema_version=1`。旧文件缺少此字段不表示没有可切分内容；需要完整新输出时使用新文件名重新运行上述命令。切块属于解析后的本地派生步骤，不会开放 `data/processed/` 的检索 allowlist，也不改变 `just ingest` 的未实现状态。
 
 M1-11 为每个块增加 `ev1:` 前缀的证据 ID 和版本化物理定位器，外层仍为 `schema_version=1`。旧文件不自动补写，使用新文件名重跑可获得这些字段。相同来源、PDF 指纹和规范化物理覆盖范围的 ID 不随解析引用编号或块排序变化；来源文件或物理覆盖变化会得到新 ID。缺少定位信息或单元格所属页有歧义时整个命令失败，不写不完整结果。当前多页表格的单元格定位尚不支持；跨页文本保留全部物理锚点。
+
+M1-12 在块上增加 `locations` 和 `table_row`，保留原有 `section` 与完整父文档 `document_key`。`locations` 逐页列出全部物理页和对应印刷页标签，未知标签为 `null`；表格保存表引用及原零基左闭右开行组范围，正文的 `table_row=null`。印刷页只读来源清单中绑定 PDF 摘要的已核验映射，不猜测页号或偏移；错误映射在推理前失败。映射快照保存在输出 `source.printed_page_map`，不进入稳定 ID 计算。外层仍为 `schema_version=1`，旧输出需用新文件名重新解析才能得到新增字段。
 
 文档中的 `body` 树保存交错阅读顺序，`texts` / `tables` 是按类型存储的集合，不能通过拼接这两个数组恢复阅读顺序。按 [Docling 文档模型](https://docling-project.github.io/docling/concepts/docling_document/) 遍历：
 
@@ -71,7 +73,7 @@ for item, level in document.iterate_items():
 uv run --frozen python -m unittest discover -s tests -p test_pdf_parsing.py -v
 ```
 
-`.github/workflows/pdf-parser.yml` 在 Linux / Python 3.11 安装锁定的 CPU 依赖，运行上述离线契约测试；[首次 CI 运行](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39929017180) 的 11 项测试全部通过。标准库数据 CI 仍可运行，没有 Docling 时明确跳过其六项契约测试（含原生文档切块和物理证据定位契约）。Compose CI 只安装开发工具，不承担 PDF 推理验证。
+`.github/workflows/pdf-parser.yml` 在 Linux / Python 3.11 安装锁定的 CPU 依赖，运行上述离线契约测试；[首次 CI 运行](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39929017180) 的 11 项测试全部通过。标准库数据 CI 仍可运行，没有 Docling 时明确跳过其七项契约测试（含原生文档切块、物理证据定位和跨页元数据契约）。Compose CI 只安装开发工具，不承担 PDF 推理验证。
 
 2026-10-23 在 Windows / Python 3.12.10 上，通过上述 CLI 解析了已验原文件指纹的 4 个物理页；模型五个文件的 SHA-256 全部匹配，推理时设置 `HF_HUB_OFFLINE=1` 与 `TRANSFORMERS_OFFLINE=1`。对照本地渲染页面检查结构：
 
@@ -100,4 +102,8 @@ M1-11 的 `tests/test_evidence_ids.py` 覆盖引用/块重排、表和单元格�
 
 2026-10-28 在同一本地锁定环境中，对两次独立解析的固件 536–538 页、硬件 152 页结果重新切块并计算 ID，18 个故障行组和 1 个章节块的 ID 集合分别一致。随后离线单独重解析固件 538 页与硬件 152 页，保存为忽略文件 `data/processed/m1-11-firmware-538.json` 和 `data/processed/m1-11-hardware-152.json`；11 个固件块和 1 个硬件块的 ID 与之前结果中对应物理页一致，来源摘要及 ID 回算均通过。该抽查验证同一锁定环境下的稳定性，不代表解析器升级或全量手册的稳定性承诺。
 
-后续仍需实现：M1-12 印刷页码与段落/表行定位、M1-13 质量测试、M1-14 增量识别，以及 M1-15 人工抽样和 M1-16 安全标签。此次技术检查不替代人工或领域专家复核。
+M1-12 的 `tests/test_location_metadata.py` 用自造标签验证跨页全部保留、未知页为 `null`、标签原值保留、摘要过期/无效映射拒绝、父文档隔离和表内行范围；PDF 契约另覆盖原生 Docling 跨页正文、CLI 的映射快照及推理前失败。印刷标签来源于既有核验记录，不读取评测标签。
+
+2026-10-29 回读既有四页解析结果，19 个块的页码、父文档与表行范围均匹配，证据 ID 未变。再以离线模型模式独立解析固件 537 页和硬件 152 页，分别保存为忽略文件 `data/processed/m1-12-firmware-537.json`、`data/processed/m1-12-hardware-152.json`：5 个故障行组和 1 个章节块的物理/印刷页标签均符合已核验映射，ID 与既有对应页一致；九行共享措施所在块保留 `[1, 10]` 行范围。跨页行为由合成 Docling 契约验证，不将这两页单页样本描述为真实跨页质量验收。
+
+后续仍需实现：M1-13 质量测试、M1-14 增量识别，以及 M1-15 人工抽样和 M1-16 安全标签。此次技术检查不替代人工或领域专家复核。

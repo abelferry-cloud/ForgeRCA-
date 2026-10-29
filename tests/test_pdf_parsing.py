@@ -12,6 +12,7 @@ from unittest.mock import patch
 from app.ingestion import pdf
 from app.ingestion.chunking import chunk_document
 from app.ingestion.evidence import identify_chunk
+from app.ingestion.metadata import locate_chunk
 from scripts import download_parser_models, parse_pdf
 
 
@@ -123,6 +124,21 @@ class DoclingContractTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "every requested page"):
             self.convert()
 
+    def test_native_cross_page_prose_preserves_locations_and_parent(self):
+        result, _ = self.convert()
+        key = "SYNTHETIC@A:" + "0" * 64
+        chunk = chunk_document(result["document"], key)[2]
+        identified = identify_chunk(result["document"], chunk)
+        source = {"id": "SYNTHETIC", "document_code": "SYNTHETIC-MANUAL", "revision": "A",
+                  "sha256": "0" * 64, "firmware_scope": None, "url": "https://example.com/manual.pdf",
+                  "accessed_at": "2026-10-29", "pages": 8}
+        located = locate_chunk(identified, source)
+        self.assertEqual(located["locations"], [{"pdf_page": 7, "printed_page": None},
+                                                {"pdf_page": 8, "printed_page": None}])
+        self.assertEqual(located["section"], ["Title"])
+        self.assertEqual(located["document_key"], key)
+        self.assertEqual(located["evidence_id"], identified["evidence_id"])
+
     def test_downloader_repairs_corrupt_cache_at_the_pinned_revision(self):
         pins = {"layout": {"repo_id": "example/model", "revision": "a" * 40,
                            "files": {"model.safetensors": hashlib.sha256(b"valid").hexdigest()}}}
@@ -174,6 +190,13 @@ class ParseCommandTests(unittest.TestCase):
         self.assertEqual(result["chunks"], [])
 
     def test_serializes_raw_and_normalized_fault_codes_without_changing_cells(self):
+        manifest_path = self.root / "data/sources/manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        source = manifest["sources"][0]
+        source["verified_pdf_pages"] = [1]
+        source["printed_page_map"] = {"sha256": source["sha256"], "verification_ref": "synthetic.md",
+                                      "pages": {"1": "iv"}}
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
         cells = []
         for text, row, column, header in (("编码（hex）", 0, 0, True), ("故障/辅助代码", 0, 1, True),
                                           (" 00a1 ", 1, 0, False), ("0002", 1, 1, False)):
@@ -201,6 +224,19 @@ class ParseCommandTests(unittest.TestCase):
         self.assertIn(" 00a1 \t0002", result["chunks"][0]["text"])
         self.assertRegex(result["chunks"][0]["evidence_id"], r"^ev1:[0-9a-f]{64}$")
         self.assertEqual(result["chunks"][0]["evidence_locator"]["sha256"], result["source"]["sha256"])
+        self.assertEqual(result["chunks"][0]["locations"], [{"pdf_page": 1, "printed_page": "iv"}])
+        self.assertEqual(result["source"]["printed_page_map"], source["printed_page_map"])
+        self.assertEqual(result["chunks"][0]["table_row"], {"table_ref": "#/tables/0", "row_range": [1, 2]})
+
+    def test_stale_printed_page_map_fails_before_parsing(self):
+        path = self.root / "data/sources/manifest.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        manifest["sources"][0]["printed_page_map"] = {"sha256": "0" * 64}
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Printed page map"):
+            parse_pdf.main(self.args)
+        self.convert.assert_not_called()
+        self.assertFalse(self.output.exists())
 
     def test_missing_evidence_provenance_leaves_no_output(self):
         self.convert.return_value = {"document": {
