@@ -10,6 +10,7 @@ from app.ingestion.evidence import identify_chunk
 from app.ingestion.fault_codes import extract_fault_codes
 from app.ingestion.metadata import locate_chunk
 from app.ingestion.pdf import parse_pdf
+from app.ingestion.quality import validate_document_quality
 from app.schemas.document import document_keys, printed_page_labels
 from scripts.download_sources import verify_file
 
@@ -41,6 +42,7 @@ def main(argv=None):
     path = ROOT / source["local_path"]
     verify_file(path, source)
     result = parse_pdf(path, (start, end))
+    validate_document_quality(result["document"])
     result["source"] = {"document_key": document_key.value, **asdict(document_key)}
     if "printed_page_map" in source:
         result["source"]["printed_page_map"] = source["printed_page_map"]
