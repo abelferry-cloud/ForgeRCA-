@@ -161,6 +161,29 @@ PDF 解析结果的 `source` 保留以下字段：
 
 解析结果的 `source.printed_page_map` 原样保留本次采用的映射及核验记录引用，便于回查；原来源无此字段时不补写。映射校验验证结构和指纹绑定，不自动证明印刷标签内容正确。修改已核验的显示标签不改变物理证据 ID；变更 PDF 时必须重新核验映射。该步骤不读取 corpus 注释、评测标签或参考图。
 
+## 重解析增量比较（M1-14）
+
+`app/ingestion/incremental.py` 的 `compare_parses(before, after)` 比较两份 `schema_version=1` 解析结果，不修改输入。必须具有同一完整父文档主键（含修订和 PDF SHA-256）、同一物理页范围、完整页面集合和解析配置；每个块须能通过原生文档引用回算出相同的 ID 与定位器，且 ID 不重复。缺少 `chunks` 不视为空集合；明确的空列表可比较。不含稳定 ID 的旧结果须重解析，带 ID 但缺少后续展示字段的结果允许比较，字段缺失与显式 `null` 区分。
+
+比较单位是已存储的 Chunk。先按 `evidence_id` 配对，再比较内容与展示元数据；不模糊匹配跨文档、跨页范围或物理覆盖不同的块。内部引用字段 `source_refs`、`heading_refs`、`table_ref`、`fault_codes[].cell_ref`、`table_row.table_ref` 不参与内容比较，ID/定位器用于身份校验。`fault_codes` 与 `locations` 按规范 JSON 排序后比较（保留重复项）；块顺序忽略，章节顺序、文本、原始/规范化码值、逻辑行范围和印刷页等字段仍参与比较。原生 `document` 及顶层 `fault_codes` 不另做全字段差异扫描，报告不能用于断言整份原生文档完全相同。
+
+报告字段如下：
+
+| 字段 | 约定 |
+| --- | --- |
+| `comparison_version` | 当前为 `1`，独立于解析输出 schema。 |
+| `document_key`、`page_range` | 两份输入共有的完整父文档主键及物理页范围。 |
+| `added`、`removed` | 按字典序排列的新增/删除 ID；物理覆盖改变引起 ID 变化时报告为删除加新增。 |
+| `modified` | 按 ID 排序的 `{evidence_id, fields}` 列表；`fields` 为排序后的发生变化的块字段名，不含原文值。 |
+| `unchanged_count` | 共有 ID 中规范化后块内容未变的数量，不受来源元数据或解析配置变化影响。 |
+| `parser_before`、`parser_after` | 两份输入的 `parser` 快照，排除已单独校验的 `page_range`；须包含非空 `packages`、`options`、`models`。 |
+| `parser_fingerprint_before`、`parser_fingerprint_after` | 配置快照按键排序、无额外空白、`ensure_ascii=False`、拒绝非有限数值的 JSON，经 UTF-8 编码后的完整 SHA-256。不覆盖未记录的环境、硬件或应用代码。 |
+| `parser_changed` | 两份配置快照是否不同；配置变化不直接把所有块标为修改。 |
+| `source_metadata_changed` | 来源快照中变化的字段名，按字典序排列；主键构成部分不同已在比较前拒绝。 |
+| `inputs` | CLI 附加 `before` / `after` 的仓库相对 `path` 与输入文件完整字节 `sha256`，供回查；不冒充原 PDF 的再次验签。 |
+
+`scripts/compare_parses.py` 仅接受 `data/processed/` 中的 JSON，报告写入忽略的 `artifacts/` 新文件，不覆盖输入或已有报告。比较不引入模型依赖，不改写索引、数据库或原结果，不读取人工审核、评测标签及参考图，也不决定后续数据库更新策略。运行方式和实际抽查见 [解析说明](pdf-parsing.md#重解析结果比较m1-14)。
+
 ## 后续证据锚点与切分质量
 
 M1-13 的 `app/ingestion/quality.py` 在解析 CLI 切块前检查显式文本损坏及表格逻辑结构。文本项和表格单元格出现 `U+FFFD`，或 `U+0000–0008`、`U+000B–000C`、`U+000E–001F`、`U+007F–009F` 控制字符时失败；制表符、回车、换行及正常中文/符号保留。表格行列总数必须为非负整数，每个单元格的零基左闭右开范围必须非空且位于表内；显式 `row_span` / `col_span` 须与范围一致，逻辑格不能重叠，避免拼接时静默覆盖。未占用的空白格、合法合并单元格和空表允许存在。失败信息指出解析内引用，CLI 不写部分结果。
