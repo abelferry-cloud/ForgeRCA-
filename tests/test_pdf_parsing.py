@@ -104,6 +104,22 @@ class DoclingContractTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "did not complete"):
             self.convert("partial_success")
 
+    def test_parser_metadata_records_versions_settings_and_model_pins(self):
+        from importlib.metadata import version
+
+        result, factory = self.convert()
+        parser = result["parser"]
+        self.assertEqual(parser["packages"],
+                         {name: version(name) for name in ("docling", "docling-core", "docling-parse")})
+        self.assertEqual(parser["page_range"], [7, 8])
+        self.assertEqual(parser["models"], pdf.MODEL_PINS)
+        options = next(iter(factory.call_args.kwargs["format_options"].values())).pipeline_options
+        self.assertEqual(parser["options"], {
+            "device": options.accelerator_options.device.value, "num_threads": options.accelerator_options.num_threads,
+            "do_ocr": options.do_ocr, "do_table_structure": options.do_table_structure,
+            "table_mode": options.table_structure_options.mode.value,
+        })
+
     def test_native_docling_tree_can_be_chunked_without_losing_table_context(self):
         result, _ = self.convert()
         chunks = chunk_document(result["document"], "synthetic-document")
