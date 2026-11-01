@@ -13,6 +13,7 @@ from app.ingestion import pdf
 from app.ingestion.chunking import chunk_document
 from app.ingestion.evidence import identify_chunk
 from app.ingestion.metadata import locate_chunk
+from app.ingestion.quality import validate_document_quality
 from scripts import download_parser_models, parse_pdf
 
 
@@ -123,6 +124,48 @@ class DoclingContractTests(unittest.TestCase):
         del self.doc.pages[8]
         with self.assertRaisesRegex(RuntimeError, "every requested page"):
             self.convert()
+
+    def test_native_chinese_text_survives_export_and_quality_checks(self):
+        value = "合成中文：电压 ±5%，温度 25°C；\n第二行\t检查项目。"
+        self.doc.texts[1].text = value
+        self.doc.texts[1].prov[0].charspan = (0, len(value))
+        result, _ = self.convert()
+        restored = json.loads(json.dumps(result, ensure_ascii=False))["document"]
+        validate_document_quality(restored)
+        self.assertEqual(restored["texts"][1]["text"], value)
+        self.assertEqual(chunk_document(restored, "synthetic")[0]["text"], "Title\n" + value)
+
+    def test_native_empty_pages_are_present_without_invented_content(self):
+        from docling_core.types.doc import DoclingDocument, Size
+
+        self.doc = DoclingDocument(name="empty-pages")
+        for page in (7, 8):
+            self.doc.add_page(page_no=page, size=Size(width=200, height=300))
+        result, _ = self.convert()
+        validate_document_quality(result["document"])
+        self.assertEqual({int(page) for page in result["document"]["pages"]}, {7, 8})
+        self.assertEqual(chunk_document(result["document"], "synthetic"), [])
+
+    def test_missing_native_page_prevents_cli_output(self):
+        from docling.datamodel.base_models import ConversionStatus
+
+        del self.doc.pages[8]
+        root = Path(self.directory.name)
+        (root / "data/sources").mkdir(parents=True)
+        source = {"id": "SYNTHETIC", "local_path": "synthetic.pdf", "pages": 8,
+                  "document_code": "SYNTHETIC-MANUAL", "revision": "A", "firmware_scope": None,
+                  "url": "https://example.com/synthetic.pdf", "accessed_at": "2026-10-29",
+                  "sha256": pdf.file_sha256(self.source), "bytes": self.source.stat().st_size}
+        (root / "data/sources/manifest.json").write_text(json.dumps({"sources": [source]}), encoding="utf-8")
+        output = root / "data/processed/result.json"
+        with (patch.object(parse_pdf, "ROOT", root), patch.object(pdf, "verify_models"),
+              patch("docling.document_converter.DocumentConverter") as factory):
+            factory.return_value.convert.return_value = SimpleNamespace(
+                status=ConversionStatus.SUCCESS, document=self.doc,
+            )
+            with self.assertRaisesRegex(RuntimeError, "every requested page"):
+                parse_pdf.main(["--source", "SYNTHETIC", "--pages", "7", "8", "--output", str(output)])
+        self.assertFalse(output.exists())
 
     def test_native_cross_page_prose_preserves_locations_and_parent(self):
         result, _ = self.convert()

@@ -7,7 +7,7 @@ on:
       - scripts/parse_pdf.py
       - scripts/download_parser_models.py
       - scripts/download_sources.py
-      - tests/test_pdf_parsing.py
+      - tests/test_pdf*.py
       - pyproject.toml
       - uv.lock
       - versions.lock.json
@@ -18,7 +18,7 @@ on:
       - scripts/parse_pdf.py
       - scripts/download_parser_models.py
       - scripts/download_sources.py
-      - tests/test_pdf_parsing.py
+      - tests/test_pdf*.py
       - pyproject.toml
       - uv.lock
       - versions.lock.json
@@ -45,4 +45,4 @@ jobs:
       - name: Install locked CPU parser dependencies
         run: uv sync --frozen
       - name: Validate structure and failure handling without models or vendor PDFs
-        run: uv run --frozen python -m unittest discover -s tests -p test_pdf_parsing.py -v
+        run: uv run --frozen python -m unittest discover -s tests -p 'test_pdf*.py' -v
