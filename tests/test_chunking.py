@@ -100,6 +100,105 @@ class SectionChunkTests(unittest.TestCase):
         self.assertEqual(chunks(document(tables=[table([])], order=("#/tables/0",))), [])
 
 
+class SafetyChunkTests(unittest.TestCase):
+    def test_explicit_labels_keep_original_text_and_do_not_become_section_headings(self):
+        for word, label in (("警告", "warning"), ("注意", "caution"), ("危险", "danger")):
+            for value in (word, f" {word} ：合成条件", f"{word}！", f"{word}\n合成条件"):
+                for node_label in ("section_header", "text"):
+                    with self.subTest(value=value, node_label=node_label):
+                        doc = document(texts=[text("Parent", "section_header"), text(value, node_label),
+                                              text("合成步骤", "list_item", marker="1.")],
+                                       order=("#/texts/0", "#/texts/1", "#/texts/2"))
+                        original = deepcopy(doc)
+                        result = chunks(doc)
+                        self.assertEqual(len(result), 1)
+                        self.assertEqual(result[0]["safety_labels"], [label])
+                        self.assertEqual(result[0]["section"], ["Parent"])
+                        self.assertIn(value, result[0]["text"])
+                        self.assertIn("1. 合成步骤", result[0]["text"])
+                        self.assertEqual(doc, original)
+
+    def test_mentions_and_similar_words_are_not_labels(self):
+        for value in ("过热警告和故障", "注意事项", "危险因素分析", "请注意条件", "警告码 0001", "DANGER"):
+            with self.subTest(value=value):
+                doc = document(texts=[text(value, "section_header"), text("合成正文")],
+                               order=("#/texts/0", "#/texts/1"))
+                result = chunks(doc)[0]
+                self.assertEqual(result["safety_labels"], [])
+                self.assertEqual(result["section"], [value])
+
+    def test_safety_conditions_tables_and_following_steps_remain_one_block(self):
+        cells = headers() + [cell("00A1", 1, 0), cell("合成措施一", 1, 3),
+                             cell("00B2", 2, 0), cell("合成措施二", 2, 3)]
+        doc = document(texts=[text("合成前置条件"), text("警告：合成限制", "section_header"),
+                              text("合成后置条件"), text("合成步骤", "list_item", marker="2.")],
+                       tables=[table(cells)], pictures=[{"label": "picture", "children": []}],
+                       order=("#/texts/0", "#/pictures/0", "#/texts/1", "#/tables/0", "#/texts/2", "#/texts/3"))
+        original = deepcopy(doc)
+        result = chunks(doc)
+        self.assertEqual(len(result), 1)
+        chunk = result[0]
+        self.assertEqual(chunk["safety_labels"], ["warning"])
+        self.assertEqual([c["normalized_code"] for c in chunk["fault_codes"]], ["00A1", "00B2"])
+        self.assertTrue(chunk["text"].startswith("合成前置条件\n警告：合成限制"))
+        self.assertTrue(chunk["text"].endswith("合成后置条件\n2. 合成步骤"))
+        self.assertIn("合成措施一", chunk["text"])
+        self.assertIn("合成措施二", chunk["text"])
+        self.assertIn("#/pictures/0", chunk["source_refs"])
+        for index in range(len(cells)):
+            self.assertIn(f"#/tables/0/data/table_cells/{index}", chunk["source_refs"])
+        self.assertNotIn("table_ref", chunk)
+        self.assertEqual(doc, original)
+
+    def test_label_in_table_cell_preserves_all_rows_and_surrounding_condition(self):
+        cells = headers() + [cell("00A1", 1, 0), cell("危险！合成措施", 1, 3), cell("00B2", 2, 0)]
+        doc = document(texts=[text("合成条件"), text("合成结尾")], tables=[table(cells)],
+                       order=("#/texts/0", "#/tables/0", "#/texts/1"))
+        chunk, = chunks(doc)
+        self.assertEqual(chunk["safety_labels"], ["danger"])
+        self.assertIn("00B2", chunk["text"])
+        self.assertTrue(chunk["text"].startswith("合成条件\n"))
+        self.assertTrue(chunk["text"].endswith("\n合成结尾"))
+
+    def test_signal_after_table_keeps_preceding_conditions_in_the_same_section(self):
+        doc = document(texts=[text("合成前置条件"), text("注意！"), text("合成后续限制")],
+                       tables=[table([cell("合成表中条件", 0, 0)])],
+                       order=("#/texts/0", "#/tables/0", "#/texts/1", "#/texts/2"))
+        chunk, = chunks(doc)
+        self.assertEqual(chunk["safety_labels"], ["caution"])
+        self.assertEqual(chunk["text"], "合成前置条件\n合成表中条件\n注意！\n合成后续限制")
+
+    def test_multiple_labels_are_sorted_unique_and_preserve_every_signal(self):
+        doc = document(texts=[text("警告！"), text("合成条件\n注意：合成补充"), text("危险：合成限制"),
+                              text("警告！"), text("合成操作")], order=tuple(f"#/texts/{i}" for i in range(5)))
+        chunk, = chunks(doc)
+        self.assertEqual(chunk["safety_labels"], ["caution", "danger", "warning"])
+        self.assertEqual(chunk["text"].count("警告！"), 2)
+        self.assertEqual(len(chunk["source_refs"]), 5)
+
+    def test_normal_heading_ends_safety_context_without_leaking_labels(self):
+        doc = document(texts=[text("警告！", "section_header"), text("合成安全条件"),
+                              text("下一章节", "section_header"), text("普通正文")],
+                       tables=[table([cell("普通表", 0, 0)])],
+                       order=("#/texts/0", "#/texts/1", "#/texts/2", "#/texts/3", "#/tables/0"))
+        result = chunks(doc)
+        self.assertEqual([c["safety_labels"] for c in result], [["warning"], [], []])
+        self.assertNotIn("合成安全条件", result[-1]["text"])
+
+    def test_page_headers_do_not_break_label_condition_and_steps(self):
+        doc = document(texts=[text("注意！", "section_header"), text("合成条件"), text("页眉", "page_header"),
+                              text("步骤", "list_item", marker="1."), text("页脚", "page_footer")],
+                       order=tuple(f"#/texts/{i}" for i in range(5)))
+        chunk, = chunks(doc)
+        self.assertEqual(chunk["text"], "注意！\n合成条件\n1. 步骤")
+        self.assertEqual(chunk["safety_labels"], ["caution"])
+
+    def test_isolated_label_is_retained_without_inventing_instructions(self):
+        chunk, = chunks(document(texts=[text("危险！", "section_header")], order=("#/texts/0",)))
+        self.assertEqual(chunk["text"], "危险！")
+        self.assertEqual(chunk["safety_labels"], ["danger"])
+
+
 class FaultRowChunkTests(unittest.TestCase):
     def test_cause_and_action_share_one_chunk_per_primary_code(self):
         cells = headers() + [cell("00a1", 1, 0), cell("name", 1, 1),

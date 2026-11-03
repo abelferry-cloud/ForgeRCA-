@@ -198,6 +198,47 @@ class DoclingContractTests(unittest.TestCase):
         self.assertEqual(located["document_key"], key)
         self.assertEqual(located["evidence_id"], identified["evidence_id"])
 
+    def test_native_safety_section_keeps_cross_page_table_and_physical_locations(self):
+        from docling_core.types.doc import (
+            BoundingBox,
+            DocItemLabel,
+            DoclingDocument,
+            ProvenanceItem,
+            Size,
+            TableCell,
+            TableData,
+        )
+
+        self.doc = DoclingDocument(name="synthetic-safety")
+        for page in (7, 8):
+            self.doc.add_page(page_no=page, size=Size(width=200, height=300))
+        box = BoundingBox(l=10, t=10, r=150, b=30, coord_origin="TOPLEFT")
+        prov = ProvenanceItem(page_no=7, bbox=box, charspan=(0, 3))
+        self.doc.add_heading(text="警告！", prov=prov)
+        self.doc.add_text(label=DocItemLabel.TEXT, text="合成条件", prov=prov)
+        self.doc.add_table(data=TableData(num_rows=1, num_cols=1, table_cells=[TableCell(
+            text="合成表格措施", bbox=box, start_row_offset_idx=0, end_row_offset_idx=1,
+            start_col_offset_idx=0, end_col_offset_idx=1,
+        )]), prov=prov.model_copy(update={"page_no": 8}))
+        self.doc.add_text(label=DocItemLabel.TEXT, text="合成后续步骤", prov=prov.model_copy(update={"page_no": 8}))
+        result, _ = self.convert()
+        document = json.loads(json.dumps(result))["document"]
+        validate_document_quality(document)
+        key = "SYNTHETIC@A:" + "0" * 64
+        chunk, = chunk_document(document, key)
+        self.assertEqual(chunk["safety_labels"], ["warning"])
+        self.assertEqual(chunk["text"], "警告！\n合成条件\n合成表格措施\n合成后续步骤")
+        identified = identify_chunk(document, chunk)
+        self.assertEqual({item["pdf_page"] for item in identified["evidence_locator"]["elements"]}, {7, 8})
+        self.assertIn("#/tables/0/data/table_cells/0", identified["source_refs"])
+        self.assertEqual(identified["evidence_id"], identify_chunk(result["document"], chunk)["evidence_id"])
+        source = {"id": "SYNTHETIC", "document_code": "SYNTHETIC-MANUAL", "revision": "A",
+                  "sha256": "0" * 64, "firmware_scope": None, "url": "https://example.com/manual.pdf",
+                  "accessed_at": "2026-11-03", "pages": 8}
+        located = locate_chunk(identified, source)
+        self.assertEqual(located["table_row"], None)
+        self.assertEqual([item["pdf_page"] for item in located["locations"]], [7, 8])
+
     def test_downloader_repairs_corrupt_cache_at_the_pinned_revision(self):
         pins = {"layout": {"repo_id": "example/model", "revision": "a" * 40,
                            "files": {"model.safetensors": hashlib.sha256(b"valid").hexdigest()}}}
@@ -296,6 +337,24 @@ class ParseCommandTests(unittest.TestCase):
             parse_pdf.main(self.args)
         self.convert.assert_not_called()
         self.assertFalse(self.output.exists())
+
+    def test_serializes_safety_labels_without_rewriting_conditions(self):
+        values = [("警告：合成限制", "section_header"), ("合成条件", "text"), ("合成步骤", "list_item")]
+        document = {"body": {"children": [{"$ref": f"#/texts/{i}"} for i in range(3)]},
+                    "pages": {"1": {"page_no": 1, "size": {"width": 200, "height": 300}}}, "texts": []}
+        for index, (text, label) in enumerate(values):
+            document["texts"].append({"text": text, "label": label, "self_ref": f"#/texts/{index}",
+                                      "prov": [{"page_no": 1, "charspan": [0, len(text)], "bbox": {
+                                          "l": 10, "t": index * 40, "r": 100, "b": index * 40 + 20,
+                                          "coord_origin": "TOPLEFT"}}]})
+        self.convert.return_value = {"document": document}
+        parse_pdf.main(self.args)
+        result = json.loads(self.output.read_text(encoding="utf-8"))
+        chunk, = result["chunks"]
+        self.assertEqual(chunk["safety_labels"], ["warning"])
+        self.assertEqual(chunk["text"], "\n".join(text for text, _ in values))
+        self.assertEqual(result["document"], document)
+        self.assertEqual(chunk["evidence_id"], identify_chunk(document, chunk)["evidence_id"])
 
     def test_missing_evidence_provenance_leaves_no_output(self):
         self.convert.return_value = {"document": {
