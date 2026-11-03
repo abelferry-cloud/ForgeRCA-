@@ -104,7 +104,8 @@ class IncrementalTests(unittest.TestCase):
         changes = {"text": "更新合成内容", "section": ["新章节"], "chunk_type": "table_rows",
                    "locations": [{"pdf_page": 7, "printed_page": "viii"}], "row_range": [1, 3],
                    "table_row": {"table_ref": "#/tables/0", "row_range": [1, 3]},
-                   "fault_codes": [{"raw_code": "00a2", "normalized_code": "00A2", "cell_ref": "local"}]}
+                   "fault_codes": [{"raw_code": "00a2", "normalized_code": "00A2", "cell_ref": "local"}],
+                   "safety_labels": ["warning"]}
         for field, value in changes.items():
             before, after = snapshot(), snapshot()
             after["chunks"][2][field] = value

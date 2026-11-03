@@ -1,4 +1,4 @@
-# PDF 结构化解析、证据定位与质量检查（M1-07～14）
+# PDF 结构化解析、证据定位与质量检查（M1-07～14、16）
 
 当前提供已登记 ABB 手册的物理页范围解析、章节/故障表行组切块、稳定证据 ID、页码/表行定位元数据，以及同一原文重解析的块变更比较。使用 Docling 2.142.0，保留原生文档树、标题/正文标签、表格单元格与页码来源；尚无业务入库或检索。适用对象是带原生文字层的 PDF；OCR 关闭，扫描页不在本次验收范围。
 
@@ -49,6 +49,8 @@ M1-12 在块上增加 `locations` 和 `table_row`，保留原有 `section` 与�
 
 M1-13 在 Docling 返回结果后、故障码提取和切块之前运行显式文本/逻辑表格质量检查，不新增输出字段。坏字符、越界或重叠的单元格会停止 CLI，不生成结果文件；校验通过的原文和 ID 规则不变。空页允许存在，缺页继续失败；不会自动修复断行故障码或跨页单元格。检查范围见 [质量约束](data-spec.md#后续证据锚点与切分质量)。
 
+M1-16 为块增加 `safety_labels`，转录明确的中文警告/注意/危险信号词。含标签的连续章节按普通标题边界整段保留，包含标签前后的条件、列表、图片和穿插表格，避免表格切块分离安全上下文；无标签章节仍按原规则切分。混合章节通过全部原始引用和物理定位器回查表格，不伪造单一 `table_row`。完整规则、ID 变化与限制见 [安全上下文](data-spec.md#安全标签与上下文m1-16)。
+
 文档中的 `body` 树保存交错阅读顺序，`texts` / `tables` 是按类型存储的集合，不能通过拼接这两个数组恢复阅读顺序。按 [Docling 文档模型](https://docling-project.github.io/docling/concepts/docling_document/) 遍历：
 
 ```python
@@ -91,7 +93,7 @@ python -m scripts.compare_parses --before data/processed/firmware-536-538.json -
 uv run --frozen python -m unittest discover -s tests -p 'test_pdf*.py' -v
 ```
 
-`.github/workflows/pdf-parser.yml` 在 Linux / Python 3.11 安装锁定的 CPU 依赖，运行上述离线契约、质量及增量比较测试；[首次 CI 运行](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39929017180) 的 11 项测试全部通过。标准库数据 CI 仍可运行，没有 Docling 时明确跳过其十一项契约测试（包括 M1-13 的原生中文、空页和缺页 CLI 回归，以及 M1-14 的解析配置记录核对）。质量检查、增量比较及其测试只依赖标准库。Compose CI 只安装开发工具，不承担 PDF 推理验证。
+`.github/workflows/pdf-parser.yml` 在 Linux / Python 3.11 安装锁定的 CPU 依赖，运行上述离线契约、质量及增量比较测试；[首次 CI 运行](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39929017180) 的 11 项测试全部通过。标准库数据 CI 仍可运行，没有 Docling 时明确跳过其十二项契约测试（包括 M1-13 的原生中文、空页和缺页 CLI 回归、M1-14 的解析配置记录核对，以及 M1-16 的跨页安全章节/表格定位）。质量检查、增量比较和安全标签切块及其测试只依赖标准库。Compose CI 只安装开发工具，不承担 PDF 推理验证。
 
 2026-10-23 在 Windows / Python 3.12.10 上，通过上述 CLI 解析了已验原文件指纹的 4 个物理页；模型五个文件的 SHA-256 全部匹配，推理时设置 `HF_HUB_OFFLINE=1` 与 `TRANSFORMERS_OFFLINE=1`。对照本地渲染页面检查结构：
 
@@ -134,4 +136,8 @@ M1-14 新增 18 项标准库比较/CLI 测试，覆盖新增、删除、同锚�
 
 M1-15 已准备 [33 个锚点的人工核对材料](reviews/m1-15-anchor-review.md)：固件 536–538、542 页的 32 个故障行组和硬件 152 页的 1 个章节块。2026-11-01 新解析固件 542 页得到 14 个不同 ID，重新解析 536–538 页得到 18 个 ID；生成材料时再验原 PDF 指纹和定位。公开清单只有元数据，含原文的 HTML 留在忽略目录。全部 33 项仍待人工，不能把该技术准备算成人工验收。
 
-后续仍需完成人工抽样结论和 M1-16 安全标签。此次技术检查不替代人工或领域专家复核。
+M1-16 新增 9 项安全切块测试、1 项 CLI 输出测试及 1 项原生 Docling 契约，覆盖显式三类标签、近似词排除、表格前后条件、表内标签、多个信号词、普通标题边界、页眉页脚及跨页表格引用。2026-11-03 回读 M1-15 使用的五页快照，33 个块的 ID 均未变化，仅新增 `safety_labels` 字段：硬件章节为 `["warning"]`，32 个故障行组为 `[]`。此回读不修改已冻结的审核快照或人工清单。
+
+同日离线独立重解析硬件第 152 页，结果保存在忽略的 `data/processed/m1-16-hardware-152.json`；与 `m1-12-hardware-152-with-map.json` 比较，新增/删除块均为 0，唯一修改字段是 `safety_labels`。两处原警告、完整文本、引用、证据 ID 和展示定位保留，解析配置与来源元数据未变；报告为 `artifacts/parse-diffs/m1-16-hardware-152.json`。全量 pytest 242 passed / 426 subtests passed，系统 Python unittest 238 项、13 个跳过记录，Ruff 与数据校验通过。真实样本没有触发表格合入安全章节的情况，该行为由合成结构与原生 Docling 契约验证，不宣称已完成全量手册安全语义检查。
+
+人工抽样结论与 M1-17 起的数据库/检索仍待完成。此次技术检查不替代人工或领域专家复核。
