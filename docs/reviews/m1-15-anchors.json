@@ -1,0 +1,834 @@
+{
+  "review_version": 1,
+  "selection": "all_chunks_from_explicit_snapshots",
+  "source_manifest_sha256": "c1b85b5b1c3482190c5bb6cceaf0bec53b14cbaf65b2320b39d57d75957902b6",
+  "inputs": [
+    {
+      "path": "data/processed/m1-12-hardware-152-with-map.json",
+      "sha256": "1e5ede962f5d65172ae760074f0233b126ca05c244e026c9e34a002ce56d2a88",
+      "document_key": "ABB-HW-D-ZH@D:c2aa260efb335368930df8bd5ea44c8fd715fa1a845cc344fcfd089a870a2ece",
+      "source_id": "ABB-HW-D-ZH",
+      "pdf_path": "data/raw/abb/acs580-01-hardware-d-zh.pdf",
+      "pdf_sha256": "c2aa260efb335368930df8bd5ea44c8fd715fa1a845cc344fcfd089a870a2ece",
+      "page_range": [
+        152,
+        152
+      ],
+      "parser_fingerprint": "44b765ac241053da9cfc96101ffe30a4198410d7d477182c0578f8d5cf37265d"
+    },
+    {
+      "path": "data/processed/m1-15-firmware-536-538.json",
+      "sha256": "8253c1b20343b47107113172fbb0be318789052e90131d5ab89c336adf604888",
+      "document_key": "ABB-FW-H-ZH@H:e6ed9eab8c6a06afc0411a7ab11ace174e56385f9c554a221c3309571e4eb2b6",
+      "source_id": "ABB-FW-H-ZH",
+      "pdf_path": "data/raw/abb/acs580-firmware-h-zh.pdf",
+      "pdf_sha256": "e6ed9eab8c6a06afc0411a7ab11ace174e56385f9c554a221c3309571e4eb2b6",
+      "page_range": [
+        536,
+        538
+      ],
+      "parser_fingerprint": "44b765ac241053da9cfc96101ffe30a4198410d7d477182c0578f8d5cf37265d"
+    },
+    {
+      "path": "data/processed/m1-15-firmware-542.json",
+      "sha256": "ede46f07edc7d6e4a6c2d528bbc517aba8e857b673a5a5c0d5c22aa2c9539256",
+      "document_key": "ABB-FW-H-ZH@H:e6ed9eab8c6a06afc0411a7ab11ace174e56385f9c554a221c3309571e4eb2b6",
+      "source_id": "ABB-FW-H-ZH",
+      "pdf_path": "data/raw/abb/acs580-firmware-h-zh.pdf",
+      "pdf_sha256": "e6ed9eab8c6a06afc0411a7ab11ace174e56385f9c554a221c3309571e4eb2b6",
+      "page_range": [
+        542,
+        542
+      ],
+      "parser_fingerprint": "44b765ac241053da9cfc96101ffe30a4198410d7d477182c0578f8d5cf37265d"
+    }
+  ],
+  "items": [
+    {
+      "sample_id": "A001",
+      "input_index": 0,
+      "chunk_index": 0,
+      "evidence_id": "ev1:f9a90aed79d69fb720dac690c4ef972278a7357acbe67f1fe1c78978f7d85f52",
+      "chunk_type": "section",
+      "locations": [
+        {
+          "pdf_page": 152,
+          "printed_page": "152"
+        }
+      ],
+      "table_row": null,
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A002",
+      "input_index": 1,
+      "chunk_index": 0,
+      "evidence_id": "ev1:2246ea6260024cae36e06beae3816f912a8de5c8491ba17bc73acd17300d7fe6",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 536,
+          "printed_page": "536"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          1,
+          2
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A003",
+      "input_index": 1,
+      "chunk_index": 1,
+      "evidence_id": "ev1:d3e1c279049963af321c2f7fe51fb12b9a1e9de9e5da30e570156b50a3d6b27c",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 536,
+          "printed_page": "536"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          2,
+          3
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A004",
+      "input_index": 1,
+      "chunk_index": 2,
+      "evidence_id": "ev1:576564acaa3ce8d3852ba22922ed643685748cf1e8d81d2a585c7da33ffcac59",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 537,
+          "printed_page": "537"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/1",
+        "row_range": [
+          1,
+          10
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A005",
+      "input_index": 1,
+      "chunk_index": 3,
+      "evidence_id": "ev1:d4a6d769ec32ff9c30871795e4d9fa4957e9d3424943a26cbd0d83c3e6164b7b",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 537,
+          "printed_page": "537"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/1",
+        "row_range": [
+          10,
+          11
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A006",
+      "input_index": 1,
+      "chunk_index": 4,
+      "evidence_id": "ev1:488568a4dec49eec88fe063bbc1c0c0409766ea0b37293b442a287cf5fe53db9",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 537,
+          "printed_page": "537"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/1",
+        "row_range": [
+          11,
+          12
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A007",
+      "input_index": 1,
+      "chunk_index": 5,
+      "evidence_id": "ev1:e01a09040dca93e3aa4ec826c76379fd9e1c90b81068a2a0395ac47e1dcfd488",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 537,
+          "printed_page": "537"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/1",
+        "row_range": [
+          12,
+          13
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A008",
+      "input_index": 1,
+      "chunk_index": 6,
+      "evidence_id": "ev1:3148ea9f90a3c30a29f70a152dbeb4dad6f264b0ce73dc46cb89b4054a87b71c",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 537,
+          "printed_page": "537"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/1",
+        "row_range": [
+          13,
+          14
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A009",
+      "input_index": 1,
+      "chunk_index": 7,
+      "evidence_id": "ev1:770dd74d609ad0dc7ea9924ba269bfaa964ee49428a6d8a66117960ae507d95d",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          1,
+          2
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A010",
+      "input_index": 1,
+      "chunk_index": 8,
+      "evidence_id": "ev1:5fbeac70d3d6c907e5cf14704884b1156163b28a241781a397a4e1b20970754e",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          2,
+          3
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A011",
+      "input_index": 1,
+      "chunk_index": 9,
+      "evidence_id": "ev1:2ad8a9ed619eada28c344114ba1639da81c1b510a8fb3236790d547acfcc4a59",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          3,
+          4
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A012",
+      "input_index": 1,
+      "chunk_index": 10,
+      "evidence_id": "ev1:15e96e2faf74b86efe97c1638fb8b81b92defa6cd3d4be361583a8145f23fb9d",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          4,
+          5
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A013",
+      "input_index": 1,
+      "chunk_index": 11,
+      "evidence_id": "ev1:a13f59f01fa449561f5cc32bd4f609ce0d2bc890ee2686616304f1dda6fe7008",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          5,
+          6
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A014",
+      "input_index": 1,
+      "chunk_index": 12,
+      "evidence_id": "ev1:76b3158ac955ed96b8fad6cca293012a7a35545027a8de28edb58bdbbfa6ff84",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          6,
+          7
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A015",
+      "input_index": 1,
+      "chunk_index": 13,
+      "evidence_id": "ev1:2d25f3da613ffb9329e5fd9c79427d7d3eedeabdeddb068f435883e89204a018",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          7,
+          8
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A016",
+      "input_index": 1,
+      "chunk_index": 14,
+      "evidence_id": "ev1:c6ce154e44c0a2371b9df6d8d43713b93a36c24d8fcd6c2ed5816c13f51ac5a1",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          8,
+          9
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A017",
+      "input_index": 1,
+      "chunk_index": 15,
+      "evidence_id": "ev1:279a434b1fce4e89f8410b3df97e0882ad0bff54b8b24ae141ad45849d796246",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          9,
+          10
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A018",
+      "input_index": 1,
+      "chunk_index": 16,
+      "evidence_id": "ev1:14f47ce317cbc1e28fe4f13f2a5162511f395372cc3e0cca3369e82774f05c20",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          10,
+          11
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A019",
+      "input_index": 1,
+      "chunk_index": 17,
+      "evidence_id": "ev1:25fb0048f60455f6e444c6f4f99d3f60210e7fa096c484f5624882408d22105a",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 538,
+          "printed_page": "538"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/2",
+        "row_range": [
+          11,
+          12
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A020",
+      "input_index": 2,
+      "chunk_index": 0,
+      "evidence_id": "ev1:f119684f8d659eb8011082a39859a7f3f3c3374648e070f116436010f26600ec",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          1,
+          2
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A021",
+      "input_index": 2,
+      "chunk_index": 1,
+      "evidence_id": "ev1:1e9da15413b0a197cd95b9b566a6fe458cd5a32d9036f3d2e6c84e6a60da4e86",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          2,
+          3
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A022",
+      "input_index": 2,
+      "chunk_index": 2,
+      "evidence_id": "ev1:767841c04e9441d0796a6071eadad55824a284aebf6118c2a1088e7137d89303",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          3,
+          4
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A023",
+      "input_index": 2,
+      "chunk_index": 3,
+      "evidence_id": "ev1:03aa0a49742da09b7a2bf801b24b31d12c998130100a75cf27dbe3888858195b",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          4,
+          5
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A024",
+      "input_index": 2,
+      "chunk_index": 4,
+      "evidence_id": "ev1:97f78959823ca4ce1070c936cf02d91b225176a8892a9872ceb290ecebbc69a3",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          5,
+          6
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A025",
+      "input_index": 2,
+      "chunk_index": 5,
+      "evidence_id": "ev1:8a9b7843659d9091f6b036a25a60f7bc2434eda29a0847c5fc3c89d3467d04e6",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          6,
+          7
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A026",
+      "input_index": 2,
+      "chunk_index": 6,
+      "evidence_id": "ev1:914991724fff0d2728ee20de564b4a1fb644e4d77c803878eda4890dc7b056eb",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          7,
+          8
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A027",
+      "input_index": 2,
+      "chunk_index": 7,
+      "evidence_id": "ev1:21c6301c37efda0ac4797e42ecdc749d0a0d83fdef58f547e7f0461565ae23cf",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          8,
+          9
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A028",
+      "input_index": 2,
+      "chunk_index": 8,
+      "evidence_id": "ev1:d51b3c15f0440312897553b955740ad73a96b58447fd90e9925b462205871a20",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          9,
+          11
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A029",
+      "input_index": 2,
+      "chunk_index": 9,
+      "evidence_id": "ev1:3612b825ad8ebc540ceacba5a77d51b0919dc766a7dad71a5139e5d508b0cbb3",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          11,
+          12
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A030",
+      "input_index": 2,
+      "chunk_index": 10,
+      "evidence_id": "ev1:414fc5d0312d9721a2b684537969feffb980167b921263e8eddbc0cf90fc11f7",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          12,
+          13
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A031",
+      "input_index": 2,
+      "chunk_index": 11,
+      "evidence_id": "ev1:ea4c420a3e688cb2d147c1abfe4306f2e481298760f5da3c060496dc104243ab",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          13,
+          14
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A032",
+      "input_index": 2,
+      "chunk_index": 12,
+      "evidence_id": "ev1:af2e80f6feb330abf24871a115cae56d06c556a40cf27da63dca578f26930239",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          14,
+          15
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    },
+    {
+      "sample_id": "A033",
+      "input_index": 2,
+      "chunk_index": 13,
+      "evidence_id": "ev1:dc83ab31e890cc591a15681cb7b4f60d06c38b7c1c571c0294fb29c93c08e84d",
+      "chunk_type": "fault_rows",
+      "locations": [
+        {
+          "pdf_page": 542,
+          "printed_page": "542"
+        }
+      ],
+      "table_row": {
+        "table_ref": "#/tables/0",
+        "row_range": [
+          15,
+          16
+        ]
+      },
+      "reviewer": null,
+      "review_date": null,
+      "decision": "pending",
+      "notes": null
+    }
+  ]
+}
