@@ -93,4 +93,4 @@ uv run --frozen --env-file .env python -m scripts.ingest --seed-events
 
 `knowledge.jsonl` 是项目知识注释，不导入为厂商 `document/chunk`。导入器不调用会读取评测/参考图的 `load_data()`；不读取 `data/evaluation/`、`data/graph/`、审核资料，也不改变检索 allowlist。原 PDF 和解析快照仍留在忽略目录，数据库不会保存原 PDF 文件。
 
-本地已核验硬件手册第 152 页的 M1-16 快照（1 块、`warning` 标签）以及现有 8 条工单和 16 条告警的导入准备；这不是本机数据库写入验收。真实事务、并发重跑及中途故障回滚由独立 Linux PostgreSQL CI 验证，结果在 PR 完成后记录。
+2026-11-06 本地已核验硬件手册第 152 页的 M1-16 快照（1 块、`warning` 标签）以及现有 8 条工单和 16 条告警的导入准备；这不是本机数据库写入验收。[Linux PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42239312605) 的 7 项输入测试、13 项数据库/迁移测试全部通过：并发相同输入只产生一个运行，第二块写入异常时文档/运行/块均回滚，事件冲突回滚此前新增资产与工单，修订并存/新页追加/重切块及遗漏拒绝均通过。本地 pytest 为 256 passed、7 skipped、465 subtests，系统 unittest 为 258 项、20 项跳过；Ruff、原 PDF/数据及敏感文件检查通过。
