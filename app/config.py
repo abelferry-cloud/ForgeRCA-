@@ -14,8 +14,8 @@ Two rules matter for safety:
   without leaking anything. Use :meth:`Settings.redacted` for logging.
 
 ``Settings.from_env(required=(...))`` is how a milestone states what it needs.
-M1 has no services yet, so the default requirement list is empty; M1-17 will
-require the PostgreSQL variables before opening a connection.
+The default requirement list stays empty for offline tools; M1-17's database
+entry point requires POSTGRES_PASSWORD before constructing an engine.
 """
 
 from __future__ import annotations

@@ -61,7 +61,7 @@ uv run pytest
 - **M1-01 已建立 `pyproject.toml` 与 `uv.lock`（2026-10-19）。** M1-07 起，PDF 解析正式引入 `docling==2.142.0` 与 CPU PyTorch 来源，原有种子校验脚本仍只用标准库。`dev` 分组的 `pytest`、`ruff`、`rust-just==1.58.0` 均为开发工具，不得被运行时代码导入。
 - 依赖变更必须同步更新 `uv.lock` 并提交；本地与 CI 用 `uv sync --frozen` 复现，不要写未经安装验证的版本。
 - 本地环境：`uv sync --frozen` → `uv run --frozen pytest` → `uv run --frozen ruff check .`。种子数据校验与公开来源下载脚本仍可用系统 Python 3.11+ 运行；M1-07 解析与模型下载命令需要锁定环境，见 [PDF 解析说明](docs/pdf-parsing.md)。
-- 数据 CI 沿用标准库命令；Compose CI 使用 `--only-dev` 验证命令入口及 `up` / `down`；PDF CI 安装锁定运行依赖并用合成文档检查解析契约，不下载模型或厂商 PDF。把全量 lint / pytest 接进 CI 仍属于 M5-14，在那之前 lint 是本地合并门禁的一部分。
+- 数据 CI 沿用标准库命令；Compose CI 使用 `--only-dev` 验证命令入口及 `up` / `down`；PDF CI 安装锁定运行依赖并用合成文档检查解析契约，不下载模型或厂商 PDF。M1-17 的 PostgreSQL CI 使用独立临时数据库与合成记录验证迁移、约束和降级，见[数据库说明](docs/database.md)。把全量 lint / pytest 接进 CI 仍属于 M5-14，在那之前 lint 是本地合并门禁的一部分。
 - 不要并行维护第二套依赖来源（例如同时提交 `requirements.txt`）。两套并存时锁文件不再代表真实环境。
 - 选择理由：`uv` 用一个工具覆盖解释器版本、依赖解析与锁定、虚拟环境管理，并能产出可提交的 `uv.lock`，比 `pip` 加手工维护的 `requirements.txt` 更易复现。若后续发现 `uv` 无法满足需要，应在 PR 中记录原因后**整体切换**，而不是混用两套。
 

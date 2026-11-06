@@ -8,12 +8,12 @@
 | --- | --- | --- |
 | Python 开发环境 | `uv.lock`；uv `0.10.12` | `uv sync --frozen`，本机 Python 3.12.10；项目最低 3.11，开发工具版本以锁文件为准 |
 | Docling | `docling==2.142.0`、`docling-slim==2.142.0` 的 wheel SHA-256 | M1-07 已引入运行依赖，完整依赖见 `uv.lock`，解析范围见 [PDF 说明](pdf-parsing.md)。Docling 此版本通过 `docling-slim[standard]` 提供实现 |
-| DB migration 工具 | `alembic==1.20.1` 的 wheel SHA-256 | 下载并核对发布文件；M1-17 才引入 SQLAlchemy、驱动、迁移环境和业务表 |
+| DB migration 工具 | `alembic==1.20.1` 的 wheel SHA-256 | M1-17 安装并核对锁文件中的 wheel 指纹；SQLAlchemy 2.1.6、psycopg / psycopg-binary 3.3.7 及传递依赖锁在 `uv.lock`，迁移与验收见[数据库说明](database.md) |
 | 初始向量模型 | `BAAI/bge-m3`，revision `5617a9f61b028005a4858fdac845db406aefb181` | 核对该 revision 下四份配置文件及 SHA-256；未下载权重或运行推理 |
 | OpenSearch mapping | [`dense-v1.json`](../config/opensearch/dense-v1.json) 的完整字节 SHA-256 | 固定 1024 维、Lucene HNSW、cosine；CI 用人工构造向量检查接受与拒绝行为 |
 | 本地服务镜像 | 三个多架构 image index / manifest list digest | Compose 直接使用 `tag@sha256:…`，固定镜像集合；Linux CI 验证启动和保留卷重建 |
 
-包来源：[Docling 2.142.0](https://pypi.org/project/docling/2.142.0/)、[Docling Slim 2.142.0](https://pypi.org/project/docling-slim/2.142.0/)、[Alembic 1.20.1](https://pypi.org/project/alembic/1.20.1/)。清单记录实际下载 wheel 的 URL 和实算 SHA-256，并与 PyPI JSON 元数据一致。M1-07 已安装并锁定 Docling 的传递依赖；Alembic 仍只核验发布文件，待 M1-17 安装。清单不能替代 Python 依赖锁文件。
+包来源：[Docling 2.142.0](https://pypi.org/project/docling/2.142.0/)、[Docling Slim 2.142.0](https://pypi.org/project/docling-slim/2.142.0/)、[Alembic 1.20.1](https://pypi.org/project/alembic/1.20.1/)。清单记录实际下载 wheel 的 URL 和实算 SHA-256，并与 PyPI JSON 元数据一致。M1-07 已安装并锁定 Docling 的传递依赖；M1-17 已安装 Alembic 及数据库依赖，锁定 wheel 与既有指纹一致。清单不能替代 Python 依赖锁文件。
 
 模型的 [固定 revision](https://huggingface.co/BAAI/bge-m3/tree/5617a9f61b028005a4858fdac845db406aefb181) 保留权重和配置身份。配置显示 1024 维、CLS pooling、Normalize 模块与 8192 最大序列长度；这些是上游配置事实，不是本机推理结果。M1-20 仍需锁定并实测推理库、计算精度、归一化调用、截断策略与批大小；不得仅靠模型名或 `main` 下载来复现实验。
 

@@ -1,0 +1,74 @@
+name: Validate PostgreSQL migrations
+
+on:
+  push:
+    paths:
+      - app/db/**
+      - app/config.py
+      - migrations/**
+      - alembic.ini
+      - tests/test_db*.py
+      - pyproject.toml
+      - uv.lock
+      - versions.lock.json
+      - .github/workflows/postgres.yml
+  pull_request:
+    paths:
+      - app/db/**
+      - app/config.py
+      - migrations/**
+      - alembic.ini
+      - tests/test_db*.py
+      - pyproject.toml
+      - uv.lock
+      - versions.lock.json
+      - .github/workflows/postgres.yml
+
+permissions:
+  contents: read
+
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "55432"
+      POSTGRES_USER: forgerca
+      POSTGRES_DB: forgerca_test
+      FORGERCA_TEST_POSTGRES: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.10.12"
+          python-version: "3.11"
+      - name: Install locked dependencies
+        run: uv sync --frozen
+      - name: Prepare disposable database credentials
+        run: |
+          pg_pass=$(openssl rand -hex 24)
+          echo "::add-mask::$pg_pass"
+          echo "POSTGRES_PASSWORD=$pg_pass" >> "$GITHUB_ENV"
+      - name: Start the pinned PostgreSQL image with no persistent volume
+        run: |
+          pg_image=$(python -c "import json; print(json.load(open('versions.lock.json'))['images']['postgres'])")
+          docker run --detach --name forgerca-postgres \
+            --env POSTGRES_USER --env POSTGRES_DB --env POSTGRES_PASSWORD \
+            --publish 127.0.0.1:55432:5432 \
+            --health-cmd 'pg_isready -U forgerca -d forgerca_test' \
+            --health-interval 2s --health-timeout 3s --health-retries 30 "$pg_image"
+          for attempt in $(seq 1 60); do
+            if [ "$(docker inspect --format '{{.State.Health.Status}}' forgerca-postgres)" = healthy ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+      - name: Validate migrations, schema constraints and downgrade with synthetic records
+        run: uv run --frozen python -m unittest discover -s tests -p 'test_db*.py' -v
+      - name: Remove the disposable database
+        if: always()
+        run: docker rm --force --volumes forgerca-postgres
