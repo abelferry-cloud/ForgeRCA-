@@ -1,0 +1,43 @@
+{
+  "settings": {
+    "index": {
+      "knn": true,
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "_meta": {
+      "mapping_version": "dense-v2",
+      "embedding_model": "BAAI/bge-m3",
+      "embedding_revision": "5617a9f61b028005a4858fdac845db406aefb181"
+    },
+    "properties": {
+      "evidence_id": {"type": "keyword"},
+      "document_key": {"type": "keyword"},
+      "source_id": {"type": "keyword"},
+      "document_revision": {"type": "keyword"},
+      "record_kind": {"type": "keyword"},
+      "chunk_type": {"type": "keyword"},
+      "model": {"type": "keyword"},
+      "firmware_scope": {"type": "keyword"},
+      "firmware_version": {"type": "keyword"},
+      "firmware_state": {"type": "keyword"},
+      "synthetic": {"type": "boolean"},
+      "available_at": {"type": "date", "format": "strict_date_optional_time"},
+      "alarm_code": {"type": "keyword"},
+      "text": {"type": "text"},
+      "embedding": {
+        "type": "knn_vector",
+        "dimension": 1024,
+        "method": {
+          "name": "hnsw",
+          "engine": "lucene",
+          "space_type": "cosinesimil",
+          "parameters": {"ef_construction": 100, "m": 16}
+        }
+      }
+    }
+  }
+}

@@ -10,7 +10,7 @@
 | Docling | `docling==2.142.0`、`docling-slim==2.142.0` 的 wheel SHA-256 | M1-07 已引入运行依赖，完整依赖见 `uv.lock`，解析范围见 [PDF 说明](pdf-parsing.md)。Docling 此版本通过 `docling-slim[standard]` 提供实现 |
 | DB migration 工具 | `alembic==1.20.1` 的 wheel SHA-256 | M1-17 安装并核对锁文件中的 wheel 指纹；SQLAlchemy 2.1.6、psycopg / psycopg-binary 3.3.7 及传递依赖锁在 `uv.lock`，迁移与验收见[数据库说明](database.md) |
 | 初始向量模型 | `BAAI/bge-m3`，revision `5617a9f61b028005a4858fdac845db406aefb181` | 核对该 revision 下四份配置文件及 SHA-256；未下载权重或运行推理 |
-| OpenSearch mapping | [`dense-v1.json`](../config/opensearch/dense-v1.json) 的完整字节 SHA-256 | 固定 1024 维、Lucene HNSW、cosine；CI 用人工构造向量检查接受与拒绝行为 |
+| OpenSearch mapping | [`dense-v2.json`](../config/opensearch/dense-v2.json) 的完整字节 SHA-256 | M1-19 加入精确型号/版本/固件及来源字段，保留 1024 维、Lucene HNSW、cosine；字段契约和 CI 见[索引说明](opensearch.md) |
 | 本地服务镜像 | 三个多架构 image index / manifest list digest | Compose 直接使用 `tag@sha256:…`，固定镜像集合；Linux CI 验证启动和保留卷重建 |
 
 包来源：[Docling 2.142.0](https://pypi.org/project/docling/2.142.0/)、[Docling Slim 2.142.0](https://pypi.org/project/docling-slim/2.142.0/)、[Alembic 1.20.1](https://pypi.org/project/alembic/1.20.1/)。清单记录实际下载 wheel 的 URL 和实算 SHA-256，并与 PyPI JSON 元数据一致。M1-07 已安装并锁定 Docling 的传递依赖；M1-17 已安装 Alembic 及数据库依赖，锁定 wheel 与既有指纹一致。清单不能替代 Python 依赖锁文件。
@@ -21,11 +21,11 @@ M1-07 已在 `pdf_parser_models` 中固定 Docling 布局/表格模型的完整 
 
 ## Mapping 边界
 
-`dense-v1` 是最小向量字段基线，只有 `evidence_id` 和 `embedding`，`dynamic: strict` 禁止自动添加字段。`_meta` 同时记录 mapping 版本、模型完整名与 revision；它用于追溯，不会自动下载模型或检查向量由哪个模型生成。
+`dense-v1` 是 M1-06 的历史最小基线，只有 `evidence_id` 和 `embedding`，文件保持不变。M1-19 新建 `dense-v2` 并更新当前指纹，增加正文、来源身份、精确型号/修订、显式合成标识、可用时间和固件语义字段。`dynamic: strict` 禁止自动添加字段；`_meta` 记录 mapping 版本、模型完整名与 revision，用于追溯，不会自动下载模型或检查向量来源。
 
-字段类型和距离定义依据 [OpenSearch 2.17 文档](https://docs.opensearch.org/2.17/field-types/supported-field-types/knn-vector/)。单分片、零副本是本地验收设置，HNSW 参数不是调优结果。CI 创建一次性索引、回读 mapping 和一个人工向量，并要求错误维度与未声明字段返回 HTTP 400；没有调用 embedding 模型或索引语料。
+字段类型和距离定义依据 [OpenSearch 2.17 文档](https://docs.opensearch.org/2.17/field-types/supported-field-types/knn-vector/)。单分片、零副本是本地验收设置，HNSW 参数不是调优结果。CI 创建一次性索引、回读 mapping 和人工向量，检查字段精确筛选、空值语义、跨修订身份及错误输入拒绝；没有调用 embedding 模型或索引语料。
 
-M1-19 仍需添加正文、型号、文档修订、固件适用范围等业务字段及导入流程，并处理 `null` 的未知语义；不能直接把种子 JSONL 写入此基线。任何 mapping 变更须新建版本文件并更新清单 SHA-256；模型维度或身份改变时必须同时审查 mapping、重建索引，不能复用旧向量。
+M1-19 已提供字段和写入前校验；真实模型推理、语料转换/批量索引及检索仍须在后续任务完成，不能直接把种子 JSONL 写入此 mapping。任何 mapping 变更须新建版本文件并更新清单 SHA-256；模型维度或身份改变时必须同时审查 mapping、重建索引，不能复用旧向量。
 
 ## 容器身份
 
