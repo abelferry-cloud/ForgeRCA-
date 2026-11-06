@@ -55,4 +55,6 @@ finally { Remove-Item Env:FORGERCA_TEST_OPENSEARCH }
 
 Compose CI 自动执行同一测试：建索引后比对完整 mapping，写入三个自造记录与人工向量，回读正文和空值，验证多型号、大小写/前导零、修订、合成标识、固件状态和时间过滤；不同修订同证据 ID 共存；错误维度、未声明字段、对象型号及无效日期返回 HTTP 400。人工向量只证明字段和服务行为，不代表语义检索效果。
 
-迁移到 `dense-v2` 必须新建索引，不能直接覆盖 `dense-v1` 的映射或复用未知来源的旧向量。本项没有执行任何业务索引切换。Windows 本机 Docker Engine 不可用；Linux CI 的实际运行结果在 PR 验收后记录。
+迁移到 `dense-v2` 必须新建索引，不能直接覆盖 `dense-v1` 的映射或复用未知来源的旧向量。本项没有执行任何业务索引切换。
+
+2026-11-06 的 [Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42242297998) 实测 9 项测试全部通过，包含真实 OpenSearch mapping、三个自造记录的回读、精确元数据与时间筛选、跨修订身份及 HTTP 400 拒绝行为；三服务重建和持久化回读也通过。本地 pytest 为 264 passed、8 skipped、523 subtests；系统 Python unittest 为 267 项、21 项跳过，Ruff、数据与敏感文件检查通过。Windows 本机 Docker Engine 仍不可用，未完成本机服务验收。

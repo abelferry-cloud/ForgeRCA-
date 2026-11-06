@@ -147,7 +147,8 @@ class OpenSearchMappingTests(unittest.TestCase):
                         {"model": {"nested": "no"}}, {"available_at": "invalid-date"}):
             with self.subTest(fields=list(changes)), self.assertRaises(HTTPError) as raised:
                 request("/_doc/invalid", record(**changes), "PUT")
-            self.assertEqual(raised.exception.code, 400, raised.exception.read())
+            with raised.exception as error:
+                self.assertEqual(error.code, 400, error.read())
         self.assertEqual(count({"match_all": {}}), 3)
 
 
