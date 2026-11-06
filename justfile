@@ -24,6 +24,6 @@ up:
 down:
     docker compose down
 
-# 导入尚未实现；此入口明确失败，不写入任何数据
-ingest:
-    @python -c "import sys; sys.exit('ingest is not implemented; see M1-07 to M1-18')"
+# 显式导入一个解析快照；连接信息由进程环境提供
+ingest snapshot:
+    uv run --frozen python -m scripts.ingest --snapshot {{quote(snapshot)}}

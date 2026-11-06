@@ -60,11 +60,15 @@ class DevCommandTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse((self.root / "scanned").exists())
 
-    def test_ingest_fails_explicitly_until_the_importer_exists(self):
+    def test_ingest_requires_an_explicit_snapshot(self):
         result = self.run_just("ingest")
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("ingest is not implemented", result.stderr)
-        self.assertIn("M1-07 to M1-18", result.stderr)
+        self.assertIn("snapshot", result.stderr)
+
+    def test_ingest_quotes_a_snapshot_path_with_spaces(self):
+        result = self.run_just("--dry-run", "ingest", "data/processed/a snapshot.json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("python -m scripts.ingest --snapshot 'data/processed/a snapshot.json'", result.stderr)
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(ROOT))
 
 from app.schemas.document import document_keys, printed_page_labels  # noqa: E402
+from app.schemas.events import validate_seed_events  # noqa: E402
 
 CORPUS_FILES = {
     "knowledge_note": "data/corpus/knowledge.jsonl",
@@ -138,25 +139,7 @@ def validate(data):
                 require(record["synthetic"], f"Seed event must be synthetic: {rid}")
                 require(locator == {"file": CORPUS_FILES[kind], "record_id": rid}, f"Invalid local locator: {rid}")
 
-    work_orders = unique(data["corpus"]["work_order"], "work order")
-    for order in work_orders.values():
-        require(order["asset_id"].startswith("SYN-"), f"Not a synthetic asset: {order['id']}")
-        require(timestamp(order["opened_at"]) <= timestamp(order["closed_at"]), "Invalid work-order interval")
-        require(
-            timestamp(order["available_at"]) == timestamp(order["closed_at"]),
-            "Work order available before closure",
-        )
-        require(order["observations"] and order["action"] and order["outcome"], "Incomplete work order")
-    for alarm in data["corpus"]["alarm"]:
-        require(alarm["work_order_id"] in work_orders, "Unknown alarm work order")
-        order = work_orders[alarm["work_order_id"]]
-        for key in ("asset_id", "model", "alarm_code", "incident_group", "firmware_version"):
-            require(alarm[key] == order[key], f"Alarm/work-order mismatch: {alarm['id']} {key}")
-        require(
-            timestamp(order["opened_at"]) <= timestamp(alarm["occurred_at"]) <= timestamp(order["closed_at"]),
-            "Alarm outside work-order interval",
-        )
-        require(timestamp(alarm["available_at"]) == timestamp(alarm["occurred_at"]), "Alarm availability mismatch")
+    work_orders = validate_seed_events({kind: data["corpus"][kind] for kind in ("work_order", "alarm")})
 
     graph = data["graph"]
     require(graph["purpose"] == "extraction_reference_not_runtime_graph", "Reference graph purpose changed")

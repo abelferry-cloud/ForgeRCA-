@@ -1,6 +1,6 @@
 """Document ingestion: parsing, chunking and stable evidence anchors.
 
-Filled by M1-07 to M1-16. Rules that belong to this layer:
+Filled by M1-07 to M1-18. Rules that belong to this layer:
 
 - an evidence ID is derived from ``source_id + sha256 + page + locator``,
   never from a row index or retrieval rank;
