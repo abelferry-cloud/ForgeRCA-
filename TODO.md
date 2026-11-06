@@ -1,6 +1,6 @@
 # ForgeRCA · Engineering TODO / Roadmap
 
-> **版本**：v0.5.14（2026-11-03） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。**M1 已启动**，M1-01～14 的工程底座、PDF 解析与证据定位、质量回归及增量比较完成，M1-16 已加入显式安全标签与章节上下文保留（容器运行验收在 Linux CI）。M1-15 已准备两份手册、五个物理页的 33 个不同锚点，全部待人工核对；下一工程项为 M1-17 数据库表与迁移，入库与向量模型推理仍待实现。
+> **版本**：v0.5.15（2026-11-06） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。**M1 已启动**，M1-01～14 的工程底座、PDF 解析与证据定位、质量回归及增量比较完成，M1-16 已加入显式安全标签与章节上下文保留，M1-17 七表与迁移通过 Linux PostgreSQL CI。M1-15 已准备两份手册、五个物理页的 33 个不同锚点，全部待人工核对；下一工程项为 M1-18 幂等导入，入库与向量模型推理仍待实现。
 > **首期设备**：ABB ACS580-01（沿用仓库现有来源清单和数据协议）；后续多品牌扩展单独列入 Backlog。  
 > 本清单是**工作计划，不代表实际已完成**。以下默认任务未勾选；可在 GitHub PR 验收后逐项勾选。
 
@@ -16,7 +16,7 @@
 | 里程碑 | 目标 | 依赖 | 当前状态 |
 | --- | --- | --- | --- |
 | **M0** | 数据/文档/安全基线 | 无 | 工程与数据项已完成（22/23）；仅 M0-06 人工领域复核待签署 |
-| **M1** | 基础 Dense RAG 与可信引用 | M0 | 进行中（M1-01～10 底座、版本清单、PDF 解析、文档主键、主码规范化与语义切块完成） |
+| **M1** | 基础 Dense RAG 与可信引用 | M0 | 进行中（M1-01～14、16～17 完成；人工锚点核对、业务导入与检索待完成） |
 | **M2** | 混合检索 + 版本过滤 + Reranker | M1 | 未开始 |
 | **M3** | 证据约束的 Neo4j GraphRAG | M1/M2 | 未开始 |
 | **M4** | LangGraph 动态补检与 Langfuse | M2/M3 | 未开始 |
@@ -89,7 +89,7 @@
 
 ### M1-C · PostgreSQL / Dense 基线
 
-- [ ] **M1-17 · P0** PostgreSQL 建表与迁移：document、chunk、asset、work_order、alarm、ingest_run、diagnosis_run。
+- [x] **M1-17 · P0** PostgreSQL 建表与迁移：document、chunk、asset、work_order、alarm、ingest_run、diagnosis_run。*(2026-11-06：[PR #35](https://github.com/abelferry-cloud/ForgeRCA-/pull/35)；新增七表、冻结 Alembic 迁移与环境变量连接，文档/证据主键、同父文档导入关联、显式合成标识及时间/JSON 约束均保留。安装锁定的 Alembic 1.20.1、SQLAlchemy 2.1.6 与 psycopg 3.3.7；[Linux PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42207835074) 7 项通过，实测升级、重复升级保留数据、跨修订证据、非法输入拒绝、降级及重建，三次 schema 比对无漂移。本地 pytest 248 passed、1 skipped、430 subtests；系统 Python unittest 245 项、14 项跳过，Ruff/数据/敏感文件检查通过。运行和边界见[数据库说明](docs/database.md)。**没有自动导入语料，幂等导入及跨记录内容校验属于 M1-18；本机 Docker Engine 不可用，Windows 数据库验收未完成**)*
 - [ ] **M1-18 · P0** 实现幂等导入：同 SHA 不重复，修订升级并行存储，导入异常可以回滚。
 - [ ] **M1-19 · P0** OpenSearch 配置 embedding 字段、精确 keyword 字段和 `model / revision / firmware` 元数据。
 - [ ] **M1-20 · P0** 选择初始 embedding 模型并固化完整名称、维度、归一化策略；记录计算批大小。

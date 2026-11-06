@@ -62,4 +62,6 @@ uv run --frozen python -m unittest discover -s tests -p test_db_schema.py -v
 
 `tests/test_db_postgres.py` 只在显式设置 `FORGERCA_TEST_POSTGRES=1` 时运行，并要求数据库名为 `forgerca_test` 且初始没有业务表；它会执行降级和清空测试表，不能指向保留数据的数据库。测试覆盖真实七表、合成记录往返、跨修订 ID、重复升级保留数据、错误关联/JSON/时间拒绝、降级及再次升级；使用 `alembic check` 比对实际 schema。
 
-`.github/workflows/postgres.yml` 创建无持久化挂载的独立 PostgreSQL 容器，使用已固定镜像、随机临时密码和回环端口，执行上述集成测试后删除该容器及其匿名测试卷。测试只使用自造记录。本机 Docker Engine 当前不可用，Windows 的真实数据库运行验收尚未完成；Linux CI 结果在本 PR 完成后记录。
+`.github/workflows/postgres.yml` 创建无持久化挂载的独立 PostgreSQL 容器，使用已固定镜像、随机临时密码和回环端口，执行上述集成测试后删除该容器及其匿名测试卷。测试只使用自造记录。
+
+2026-11-06 的 [Linux PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42207835074) 实测 7 项测试全部通过；升级、重复升级保留数据、错误关联/时间/JSON 拒绝、降级及重建均通过，三次 `alembic check` 未发现结构漂移。本地锁定环境 pytest 为 248 passed、1 skipped、430 subtests passed；系统 Python unittest 为 245 项、14 项跳过，Ruff、数据与敏感文件检查通过。本机 Docker Engine 当前不可用，Windows 的真实数据库运行验收尚未完成。
