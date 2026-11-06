@@ -42,9 +42,9 @@
     }
   },
   "opensearch_mapping": {
-    "version": "dense-v1",
-    "path": "config/opensearch/dense-v1.json",
-    "sha256": "118a2a120def2ef5fba6e5ea9cfd760b9bf4c8c0ab787746c26f2b3dcacb7cf8",
+    "version": "dense-v2",
+    "path": "config/opensearch/dense-v2.json",
+    "sha256": "0c12fb8832da47e5f843d8ed6c91b6bfe9c04207fad4e253e6fdd2a972ae0226",
     "implementation_milestone": "M1-19"
   },
   "images": {

@@ -58,6 +58,8 @@ PDF 解析结果的 `source` 保留以下字段：
 
 ## 检索证据字段
 
+M1-19 的 [OpenSearch 投影契约](opensearch.md) 使用独立 `record_kind`、`synthetic` 和 `firmware_state` 保存记录性质与空值语义；型号/码值数组保持精确字符串，厂商块回查保留父文档主键。它不改变下述源记录字段，也不把项目注释变成厂商原文；实际语料转换和向量写入仍待后续任务。
+
 三类 corpus 记录共用：`id`、`kind`、`text`、`model`、`synthetic`、`available_at`、`locator`。`id` 同时是初始化阶段的稳定证据 ID，不随检索排序变化。
 
 `locator`：

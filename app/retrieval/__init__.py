@@ -1,6 +1,6 @@
 """Retrieval: query normalisation, dense/lexical search and fusion.
 
-Filled from M1-21 (dense baseline) and M2 (BM25, RRF, reranker). Every
+Index field contracts arrive in M1-19; retrieval in M1-21 and M2. Every
 returned item must carry a stable evidence ID plus its source locator; the
 same evidence reached through two paths counts once.
 
