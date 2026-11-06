@@ -34,6 +34,13 @@ def import_snapshot(engine, prepared):
                 return {"ingest_run_id": str(run["ingest_run_id"]), "inserted_chunks": 0, "reused": True}
         existing = {row["evidence_id"]: row for row in connection.execute(
             sa.select(db.chunk).where(db.chunk.c.document_key == key)).mappings()}
+        start_page, end_page = prepared["parser"]["page_range"]
+        incoming_ids = {chunk["evidence_id"] for chunk in chunks}
+        for evidence_id, old in existing.items():
+            if evidence_id not in incoming_ids and any(
+                start_page <= location["pdf_page"] <= end_page for location in old["locations"]
+            ):
+                raise ValueError("Snapshot omits existing evidence on these pages; replacement is not enabled")
         ranges = [run["parser"]["page_range"] for run in prior]
         for chunk in chunks:
             old = existing.get(chunk["evidence_id"])

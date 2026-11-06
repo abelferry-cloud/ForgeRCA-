@@ -80,11 +80,13 @@ class ImportTransactionTests(unittest.TestCase):
         self.import_snapshot(self.engine, self.prepared(pages=(3, 4), filename="next.json"))
         self.assertEqual(self.counts()["chunk"], 4)
         before = self.counts()
-        for change in ("text", "evidence_id", "source_metadata"):
+        for change in ("text", "evidence_id", "source_metadata", "removed"):
             altered = deepcopy(prepared)
             altered["input_sha256"] = "d" * 64
             if change == "source_metadata":
                 altered["document"][change]["url"] = "https://example.com/different.pdf"
+            elif change == "removed":
+                altered["chunks"].pop()
             elif change == "text":
                 altered["chunks"][0][change] = "conflicting content"
             else:

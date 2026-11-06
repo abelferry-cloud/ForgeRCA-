@@ -84,7 +84,7 @@ uv run --frozen --env-file .env python -m scripts.ingest --seed-events
 
 - `document.sha256` 是 PDF 字节摘要；`ingest_run.input_sha256` 是本次 JSON 输入文件的完整字节摘要。相同父文档、相同输入摘要重跑时复用成功运行，文档/块/运行数均不增加；文件改名不改变该判断。
 - 相同 PDF 可追加尚未导入的页；重复块保持原来的导入来源。不同 JSON 字节（例如格式化不同）可留下新的成功运行记录，但不会重复业务块。
-- 相同文档身份下来源元数据变化、相同证据 ID 下内容/引用变化，以及在已导入页上产生新的块 ID，均拒绝整批导入。这里不执行重解析替换、删除或跨页重新分组；这些更新策略留待 M1-24。
+- 相同文档身份下来源元数据变化、相同证据 ID 下内容/引用变化，以及在已导入页上新增或遗漏已有块 ID，均拒绝整批导入。这里不执行重解析替换、删除或跨页重新分组；这些更新策略留待 M1-24。
 - 修订升级使用新的 `document_key`，旧文档与块继续保留。同一来源/修订换了 PDF 字节会触发冲突。当前 manifest 内依然拒绝重复摘要；集成测试用先后登记的两个修订验证数据库并存，不放宽清单规则。
 - 在一个事务里插入文档、运行及全部块，成功后更新运行状态；任何异常都回滚该事务，包括运行记录。不会留下半批块，也不在回滚后额外保存失败审计行。
 - 插入文档后以父文档行锁串行化同文档写入，并在锁内检查已成功的输入，避免两个同时启动的导入各建一条运行。依赖 PostgreSQL 默认 `READ COMMITTED`、[行锁](https://www.postgresql.org/docs/16/explicit-locking.html#LOCKING-ROWS) 与 [ON CONFLICT](https://docs.sqlalchemy.org/en/21/dialects/postgresql.html#insert-on-conflict-upsert)；未提供跨数据库后端兼容层。
