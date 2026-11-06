@@ -126,6 +126,8 @@ M1-07～14、M1-16 的 [PDF 解析说明](docs/pdf-parsing.md) 提供已登记�
 
 M1-15 的 [人工锚点审核说明](docs/reviews/m1-15-anchor-review.md) 和 33 项定位清单已准备；所有结论待人工填写。含原文的本地阅读包保存在忽略的 `artifacts/reviews/`，不会纳入检索语料。
 
+M1-17 的 [PostgreSQL 迁移说明](docs/database.md) 提供文档、块、设备、工单、告警、导入任务和诊断记录七类表。迁移通过显式命令执行，不自动导入语料；幂等导入仍属于 M1-18。
+
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 
 ```bash

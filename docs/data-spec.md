@@ -15,6 +15,8 @@
 
 ## 文档身份（M1-08）
 
+M1-17 将下述来源、块和历史记录契约映射到 PostgreSQL 七表，保留显式合成标识、版本与可用时间；表键、外键、JSONB 边界及运行方式见 [数据库说明](database.md)。迁移不导入本目录的数据，不改变评测与审核资料隔离。
+
 `app/schemas/document.py` 从来源清单生成 `DocumentKey`，只依赖标准库。`source_id` 沿用清单的 `id`；文档主键 `document_key` 为 `source_id@revision:sha256`，使用完整 64 位小写 SHA-256，不截断摘要、不依赖来源列表顺序或解析页范围。例如固件手册的主键为：
 
 ```text

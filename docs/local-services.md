@@ -1,6 +1,6 @@
 # 本地数据库服务（M1-04）
 
-`compose.yaml` 提供 PostgreSQL、OpenSearch 和 Neo4j 三个独立服务，用于后续里程碑开发。当前没有应用表结构、索引、图谱入库或诊断 API。
+`compose.yaml` 提供 PostgreSQL、OpenSearch 和 Neo4j 三个独立服务。M1-17 的[数据库迁移](database.md) 单独建立七类业务表，启动 Compose 不会自动执行迁移；业务导入、检索、图谱入库和诊断 API 仍待实现。
 
 ## 前置条件
 
