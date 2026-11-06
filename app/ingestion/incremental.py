@@ -32,7 +32,8 @@ def _payload(chunk):
     return result
 
 
-def _snapshot(result):
+def validate_snapshot(result):
+    """Validate physical snapshot identity and return comparable chunks and parser metadata."""
     if type(result.get("schema_version")) is not int or result["schema_version"] != 1:
         raise ValueError("Unsupported parse schema; provide a complete schema_version=1 result")
     source, parser, document = (result[key] for key in ("source", "parser", "document"))
@@ -78,8 +79,8 @@ def compare_parses(before: dict, after: dict) -> dict:
     fail rather than being interpreted as empty snapshots or silently collapsed.
     """
     try:
-        old, old_parser = _snapshot(before)
-        new, new_parser = _snapshot(after)
+        old, old_parser = validate_snapshot(before)
+        new, new_parser = validate_snapshot(after)
         if before["source"]["document_key"] != after["source"]["document_key"]:
             raise ValueError("Comparison requires the same parent document and PDF digest")
         if before["parser"]["page_range"] != after["parser"]["page_range"]:

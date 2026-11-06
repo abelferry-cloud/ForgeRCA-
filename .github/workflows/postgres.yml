@@ -5,6 +5,12 @@ on:
     paths:
       - app/db/**
       - app/config.py
+      - app/ingestion/**
+      - app/schemas/**
+      - scripts/ingest.py
+      - scripts/corpus_allowlist.py
+      - scripts/download_sources.py
+      - tests/test_ingest.py
       - migrations/**
       - alembic.ini
       - tests/test_db*.py
@@ -16,6 +22,12 @@ on:
     paths:
       - app/db/**
       - app/config.py
+      - app/ingestion/**
+      - app/schemas/**
+      - scripts/ingest.py
+      - scripts/corpus_allowlist.py
+      - scripts/download_sources.py
+      - tests/test_ingest.py
       - migrations/**
       - alembic.ini
       - tests/test_db*.py
@@ -68,7 +80,9 @@ jobs:
           done
           exit 1
       - name: Validate migrations, schema constraints and downgrade with synthetic records
-        run: uv run --frozen python -m unittest discover -s tests -p 'test_db*.py' -v
+        run: |
+          uv run --frozen python -m unittest discover -s tests -p test_ingest.py -v
+          uv run --frozen python -m unittest discover -s tests -p 'test_db*.py' -v
       - name: Remove the disposable database
         if: always()
         run: docker rm --force --volumes forgerca-postgres

@@ -27,7 +27,9 @@ class PostgreSQLMigrationTests(unittest.TestCase):
         self.addCleanup(engine.dispose)
         self.assertEqual(engine.url.database, "forgerca_test", "Refusing to change a non-test database")
         with engine.connect() as connection:
-            self.assertEqual(sa.inspect(connection).get_table_names(), [], "Use a new empty test database")
+            self.assertLessEqual(set(sa.inspect(connection).get_table_names()), {"alembic_version"},
+                                 "Use a new empty test database")
+            self.assertIsNone(MigrationContext.configure(connection).get_current_revision())
         config = Config(str(ROOT / "alembic.ini"))
         command.upgrade(config, "head")
         self.addCleanup(command.downgrade, config, "base")

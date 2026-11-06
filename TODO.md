@@ -1,6 +1,6 @@
 # ForgeRCA · Engineering TODO / Roadmap
 
-> **版本**：v0.5.15（2026-11-06） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。**M1 已启动**，M1-01～14 的工程底座、PDF 解析与证据定位、质量回归及增量比较完成，M1-16 已加入显式安全标签与章节上下文保留，M1-17 七表与迁移通过 Linux PostgreSQL CI。M1-15 已准备两份手册、五个物理页的 33 个不同锚点，全部待人工核对；下一工程项为 M1-18 幂等导入，入库与向量模型推理仍待实现。
+> **版本**：v0.5.16（2026-11-06） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。**M1 已启动**，M1-01～14 的工程底座、PDF 解析与证据定位、质量回归及增量比较完成，M1-16 已加入显式安全标签与章节上下文保留，M1-17～18 七表、迁移及幂等导入通过 Linux PostgreSQL CI。M1-15 已准备两份手册、五个物理页的 33 个不同锚点，全部待人工核对；下一工程项为 M1-19 OpenSearch 索引字段，向量模型推理与检索仍待实现。
 > **首期设备**：ABB ACS580-01（沿用仓库现有来源清单和数据协议）；后续多品牌扩展单独列入 Backlog。  
 > 本清单是**工作计划，不代表实际已完成**。以下默认任务未勾选；可在 GitHub PR 验收后逐项勾选。
 
@@ -16,7 +16,7 @@
 | 里程碑 | 目标 | 依赖 | 当前状态 |
 | --- | --- | --- | --- |
 | **M0** | 数据/文档/安全基线 | 无 | 工程与数据项已完成（22/23）；仅 M0-06 人工领域复核待签署 |
-| **M1** | 基础 Dense RAG 与可信引用 | M0 | 进行中（M1-01～14、16～17 完成；人工锚点核对、业务导入与检索待完成） |
+| **M1** | 基础 Dense RAG 与可信引用 | M0 | 进行中（M1-01～14、16～18 完成；人工锚点核对、向量索引与检索待完成） |
 | **M2** | 混合检索 + 版本过滤 + Reranker | M1 | 未开始 |
 | **M3** | 证据约束的 Neo4j GraphRAG | M1/M2 | 未开始 |
 | **M4** | LangGraph 动态补检与 Langfuse | M2/M3 | 未开始 |
@@ -90,7 +90,7 @@
 ### M1-C · PostgreSQL / Dense 基线
 
 - [x] **M1-17 · P0** PostgreSQL 建表与迁移：document、chunk、asset、work_order、alarm、ingest_run、diagnosis_run。*(2026-11-06：[PR #35](https://github.com/abelferry-cloud/ForgeRCA-/pull/35)；新增七表、冻结 Alembic 迁移与环境变量连接，文档/证据主键、同父文档导入关联、显式合成标识及时间/JSON 约束均保留。安装锁定的 Alembic 1.20.1、SQLAlchemy 2.1.6 与 psycopg 3.3.7；[Linux PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42207835074) 7 项通过，实测升级、重复升级保留数据、跨修订证据、非法输入拒绝、降级及重建，三次 schema 比对无漂移。本地 pytest 248 passed、1 skipped、430 subtests；系统 Python unittest 245 项、14 项跳过，Ruff/数据/敏感文件检查通过。运行和边界见[数据库说明](docs/database.md)。**没有自动导入语料，幂等导入及跨记录内容校验属于 M1-18；本机 Docker Engine 不可用，Windows 数据库验收未完成**)*
-- [ ] **M1-18 · P0** 实现幂等导入：同 SHA 不重复，修订升级并行存储，导入异常可以回滚。
+- [x] **M1-18 · P0** 实现幂等导入：同 SHA 不重复，修订升级并行存储，导入异常可以回滚。*(2026-11-06：[PR #37](https://github.com/abelferry-cloud/ForgeRCA-/pull/37)；新增单个解析快照与白名单合成历史两个入口。验证 manifest/原 PDF/完整页范围并重建块，区分 PDF 与输入 JSON 摘要；父文档行锁防止并发重复运行，修订并存、新页追加，已有身份内容冲突或已有页证据新增/遗漏均拒绝覆盖，整批回滚。种子导入与离线校验器共享事件、固件和时间规则。[Linux PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42239312605) 7 项输入测试及 13 项数据库/迁移测试通过，实测并发、修订并存与中途故障回滚。本地 pytest 256 passed、7 skipped、465 subtests，系统 unittest 258 项、20 项跳过；Ruff、原 PDF/数据与敏感文件检查通过。已核验真实硬件 152 页快照的 1 块及 8 工单/16 告警的导入准备。边界见[导入说明](docs/database.md#幂等导入m1-18)：**无新依赖，不读取评测/参考图/审核资料，不将知识注释写成厂商块，不实现重解析替换/删除或向量索引；本机数据库写入未验收**)*
 - [ ] **M1-19 · P0** OpenSearch 配置 embedding 字段、精确 keyword 字段和 `model / revision / firmware` 元数据。
 - [ ] **M1-20 · P0** 选择初始 embedding 模型并固化完整名称、维度、归一化策略；记录计算批大小。
 - [ ] **M1-21 · P0** Dense-only Retriever：查询向量化、Top-k、metadata filter、证据 ID 去重。
