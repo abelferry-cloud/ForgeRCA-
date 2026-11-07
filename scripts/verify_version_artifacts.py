@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     lock = json.loads((ROOT / "versions.lock.json").read_text(encoding="utf-8"))
     artifacts = [(name, package["url"], package["sha256"]) for name, package in lock["packages"].items()]
-    model = lock["embedding"]
+    model = lock["embedding_reference"]
     base = f"https://huggingface.co/{model['model_id']}/resolve/{model['revision']}"
     artifacts += [(name, f"{base}/{name}", digest) for name, digest in model["configuration_files"].items()]
     for name, url, expected in artifacts:

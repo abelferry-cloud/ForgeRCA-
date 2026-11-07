@@ -28,7 +28,8 @@ EXPECTED_DEFAULTS: dict[str, object] = {
     "NEO4J_BOLT_PORT": 7687,
     "NEO4J_USER": "neo4j",
     "NEO4J_PASSWORD": "",
-    "EMBEDDING_MODEL": "",
+    "EMBEDDING_MODEL": "text-embedding-v4",
+    "DASHSCOPE_API_KEY": "",
     "RERANKER_MODEL": "",
     "LLM_PROVIDER": "",
     "LLM_MODEL": "",
@@ -148,6 +149,7 @@ class SecretTests(unittest.TestCase):
             {
                 "POSTGRES_PASSWORD": pg_secret,
                 "LLM_API_KEY": api_secret,
+                "DASHSCOPE_API_KEY": api_secret,
                 "LANGFUSE_SECRET_KEY": lf_secret,
             }
         )

@@ -1,10 +1,10 @@
 # OpenSearch 业务字段（M1-19）
 
-`dense-v2` 扩展 M1-06 的最小向量 mapping，保留独立的 `dense-v1.json` 历史基线。当前提供字段配置、写入前契约和临时索引集成测试；没有运行 embedding 模型、索引真实语料或实现 Retriever。PostgreSQL 仍是来源和物理定位的权威存储。
+`dense-v2` 扩展 M1-06 的最小向量 mapping。M1-20 新建 `dense-v3`，字段不变，将向量模型身份改为阿里云 `text-embedding-v4`，保留独立的 v1/v2 历史文件。当前提供字段配置、写入前契约和临时索引集成测试；[Embedding API](embedding.md) 已单独实测，但没有索引真实语料或实现 Retriever。PostgreSQL 仍是来源和物理定位的权威存储。
 
 ## 版本与字段
 
-`versions.lock.json.opensearch_mapping` 指向 `config/opensearch/dense-v2.json` 并记录完整字节 SHA-256。`load_mapping()` 核对摘要后返回配置。继续使用固定的 OpenSearch 2.17.1 镜像，以及 1024 维、Lucene HNSW、cosine 配置；模型身份仍是清单固定 revision 的 BGE-M3，不升级服务、不新增依赖。
+`versions.lock.json.opensearch_mapping` 指向 `config/opensearch/dense-v3.json` 并记录完整字节 SHA-256。`load_mapping()` 核对摘要后返回配置。继续使用固定的 OpenSearch 2.17.1 镜像，以及 1024 维、Lucene HNSW、cosine 配置；`_meta` 记录 `aliyun_dashscope`、`text-embedding-v4`、L2 归一化和未知的服务端 revision（`null`）。v2 的 BGE 向量与 v3 不兼容，须重建索引；不升级服务、不新增依赖。
 
 | 字段 | OpenSearch 类型 | 输入契约与用途 |
 | --- | --- | --- |
@@ -19,7 +19,7 @@
 | `available_at` | `date` | 写入契约要求含时区的时间；后续构建器须使用有来源依据的可用时间，不能用导入时间替代、从缺少时区的日期猜测现场时间。 |
 | `alarm_code` | `keyword` | 原始码值字符串数组，允许无故障码时为 `[]`；保留前导零、大小写和原文字符，不做数值转换或隐式规范化。 |
 | `text` | `text` | 非空正文；使用默认分析器，M2 再处理中文分词/BM25，不宣称已优化全文检索。 |
-| `embedding` | `knn_vector` | 1024 个有限、float32 范围内的数值，排除布尔值与零向量；M1-20 再锁定实际推理、归一化和批大小。 |
+| `embedding` | `knn_vector` | 1024 个有限、float32 范围内的数值，排除布尔值与零向量；M1-20 客户端执行 L2 归一化，每批最多 10 条。 |
 
 精确字段没有 normalizer。OpenSearch 的 [keyword](https://docs.opensearch.org/2.17/field-types/supported-field-types/keyword/) 不分词、区分大小写；`00a1`、`00A1`、`a1` 分别匹配，不把它们隐式合并。`model` 数组任一元素可以被精确 term 查询命中。
 
@@ -55,6 +55,6 @@ finally { Remove-Item Env:FORGERCA_TEST_OPENSEARCH }
 
 Compose CI 自动执行同一测试：建索引后比对完整 mapping，写入三个自造记录与人工向量，回读正文和空值，验证多型号、大小写/前导零、修订、合成标识、固件状态和时间过滤；不同修订同证据 ID 共存；错误维度、未声明字段、对象型号及无效日期返回 HTTP 400。人工向量只证明字段和服务行为，不代表语义检索效果。
 
-迁移到 `dense-v2` 必须新建索引，不能直接覆盖 `dense-v1` 的映射或复用未知来源的旧向量。本项没有执行任何业务索引切换。
+迁移到 `dense-v3` 必须新建索引，不能覆盖旧版映射或复用 BGE / 未知来源的旧向量。本项没有执行任何业务索引切换。
 
 2026-11-06 的 [Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42242297998) 实测 9 项测试全部通过，包含真实 OpenSearch mapping、三个自造记录的回读、精确元数据与时间筛选、跨修订身份及 HTTP 400 拒绝行为；三服务重建和持久化回读也通过。本地 pytest 为 264 passed、8 skipped、523 subtests；系统 Python unittest 为 267 项、21 项跳过，Ruff、数据与敏感文件检查通过。Windows 本机 Docker Engine 仍不可用，未完成本机服务验收。

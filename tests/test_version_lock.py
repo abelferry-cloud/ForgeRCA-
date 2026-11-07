@@ -26,7 +26,7 @@ class VersionLockTests(unittest.TestCase):
                 self.assertEqual((url.scheme, url.netloc), ("https", "files.pythonhosted.org"))
                 filename = f"{name.replace('-', '_')}-{package['version']}-py3-none-any.whl"
                 self.assertEqual(Path(url.path).name, filename)
-        model = LOCK["embedding"]
+        model = LOCK["embedding_reference"]
         self.assertRegex(model["revision"], r"^[0-9a-f]{40}$")
         self.assertTrue(model["configuration_files"])
         for digest in model["configuration_files"].values():
@@ -43,6 +43,9 @@ class VersionLockTests(unittest.TestCase):
         self.assertEqual(mapping["_meta"]["mapping_version"], entry["version"])
         self.assertEqual(mapping["_meta"]["embedding_model"], LOCK["embedding"]["model_id"])
         self.assertEqual(mapping["_meta"]["embedding_revision"], LOCK["embedding"]["revision"])
+        self.assertIsNone(LOCK["embedding"]["revision"])
+        self.assertEqual(mapping["_meta"]["embedding_provider"], LOCK["embedding"]["provider"])
+        self.assertEqual(mapping["_meta"]["embedding_normalization"], LOCK["embedding"]["inference"]["normalization"])
         self.assertEqual(mapping["properties"]["embedding"]["dimension"], LOCK["embedding"]["dimension"])
 
     def test_artifact_verifier_uses_the_pinned_urls(self):
@@ -51,7 +54,7 @@ class VersionLockTests(unittest.TestCase):
         revision = "a" * 40
         manifest = {
             "packages": {"example": {"url": "https://example.org/fixed.whl", "sha256": digest}},
-            "embedding": {
+            "embedding_reference": {
                 "model_id": "example/model", "revision": revision,
                 "configuration_files": {"config.json": digest},
             },

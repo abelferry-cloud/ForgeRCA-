@@ -39,6 +39,7 @@ _SECRET_ENV_VARS = (
     ("opensearch_password", "OPENSEARCH_PASSWORD"),
     ("neo4j_password", "NEO4J_PASSWORD"),
     ("llm_api_key", "LLM_API_KEY"),
+    ("dashscope_api_key", "DASHSCOPE_API_KEY"),
     ("langfuse_public_key", "LANGFUSE_PUBLIC_KEY"),
     ("langfuse_secret_key", "LANGFUSE_SECRET_KEY"),
 )
@@ -112,7 +113,8 @@ class Settings:
     neo4j_user: str = "neo4j"
     neo4j_password: Secret = Secret()
 
-    embedding_model: str = ""
+    embedding_model: str = "text-embedding-v4"
+    dashscope_api_key: Secret = Secret()
     reranker_model: str = ""
     llm_provider: str = ""
     llm_model: str = ""
@@ -152,7 +154,7 @@ class Settings:
             neo4j_http_port=_port(source, "NEO4J_HTTP_PORT", 7474),
             neo4j_bolt_port=_port(source, "NEO4J_BOLT_PORT", 7687),
             neo4j_user=_text(source, "NEO4J_USER", "neo4j"),
-            embedding_model=_text(source, "EMBEDDING_MODEL"),
+            embedding_model=_text(source, "EMBEDDING_MODEL", "text-embedding-v4"),
             reranker_model=_text(source, "RERANKER_MODEL"),
             llm_provider=_text(source, "LLM_PROVIDER"),
             llm_model=_text(source, "LLM_MODEL"),
