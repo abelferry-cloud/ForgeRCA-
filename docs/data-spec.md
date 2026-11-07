@@ -9,9 +9,11 @@
 - `data/corpus/knowledge.jsonl`：项目编写的简短事实注释或合成干扰规则；带原始 PDF 页码的注释不是逐字原文，也不是厂商发布的独立文件。
 - `data/corpus/work_orders.jsonl`：虚构历史维修事件。
 - `data/corpus/alarms.jsonl`：与历史工单关联的虚构告警事件。
-- `data/evaluation/`：输入、根因和证据标注。任何索引过程都必须显式排除此目录。唯一允许的语料入口是 `scripts/corpus_allowlist.py` 的显式 allowlist（`indexable_files()` / `assert_indexable()`）：构建器不得用目录递归（如 `rglob("*.jsonl")`）生成索引，路径必须逐个通过 allowlist 校验。该边界由 `tests/test_corpus_isolation.py` 守护。
+- `data/evaluation/`：输入、根因和证据标注。任何索引过程都必须显式排除此目录。文件语料只允许通过 `scripts/corpus_allowlist.py` 的显式 allowlist（`indexable_files()` / `assert_indexable()`）：构建器不得用目录递归（如 `rglob("*.jsonl")`）生成索引，路径必须逐个通过 allowlist 校验。该边界由 `tests/test_corpus_isolation.py` 守护。
 - `data/graph/reference.json`：用于校验抽取的手工实体和关系；不得直接当作 LLM 抽取成果。
 - `docs/reviews/`：人工审核材料，含评测答案与审核意见，禁止作为检索语料。
+
+M1-21 新增独立的数据库入口：`INDEXABLE_DATABASE_TABLES=("chunk",)`，只读取成功导入的 PostgreSQL 手册块，连接 `document` 和同父文档的成功 `ingest_run` 获取来源及状态。`data/processed/` 仍在文件索引禁区，快照必须先经过 M1-18 验证及入库；不查询 `diagnosis_run` 或参考图。具体投影与调用见 [Dense 检索说明](dense-retrieval.md)。
 
 ## 文档身份（M1-08）
 
@@ -58,7 +60,7 @@ PDF 解析结果的 `source` 保留以下字段：
 
 ## 检索证据字段
 
-M1-19 的 [OpenSearch 投影契约](opensearch.md) 使用独立 `record_kind`、`synthetic` 和 `firmware_state` 保存记录性质与空值语义；型号/码值数组保持精确字符串，厂商块回查保留父文档主键。它不改变下述源记录字段，也不把项目注释变成厂商原文；实际语料转换和向量写入仍待后续任务。
+M1-19 的 [OpenSearch 投影契约](opensearch.md) 使用独立 `record_kind`、`synthetic` 和 `firmware_state` 保存记录性质与空值语义；型号/码值数组保持精确字符串，厂商块回查保留父文档主键。M1-21 实现显式投影与新索引构建，不改变下述源记录字段，也不把项目注释变成厂商原文。
 
 三类 corpus 记录共用：`id`、`kind`、`text`、`model`、`synthetic`、`available_at`、`locator`。`id` 同时是初始化阶段的稳定证据 ID，不随检索排序变化。
 

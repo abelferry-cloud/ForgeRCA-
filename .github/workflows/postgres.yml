@@ -8,6 +8,9 @@ on:
       - app/ingestion/**
       - app/schemas/**
       - scripts/ingest.py
+      - app/retrieval/corpus.py
+      - app/retrieval/index_schema.py
+      - scripts/validate_data.py
       - scripts/corpus_allowlist.py
       - scripts/download_sources.py
       - tests/test_ingest.py
@@ -25,6 +28,9 @@ on:
       - app/ingestion/**
       - app/schemas/**
       - scripts/ingest.py
+      - app/retrieval/corpus.py
+      - app/retrieval/index_schema.py
+      - scripts/validate_data.py
       - scripts/corpus_allowlist.py
       - scripts/download_sources.py
       - tests/test_ingest.py

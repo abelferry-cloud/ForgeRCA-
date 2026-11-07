@@ -1,6 +1,6 @@
 # OpenSearch 业务字段（M1-19）
 
-`dense-v2` 扩展 M1-06 的最小向量 mapping。M1-20 新建 `dense-v3`，字段不变，将向量模型身份改为阿里云 `text-embedding-v4`，保留独立的 v1/v2 历史文件。当前提供字段配置、写入前契约和临时索引集成测试；[Embedding API](embedding.md) 已单独实测，但没有索引真实语料或实现 Retriever。PostgreSQL 仍是来源和物理定位的权威存储。
+`dense-v2` 扩展 M1-06 的最小向量 mapping。M1-20 新建 `dense-v3`，字段不变，将向量模型身份改为阿里云 `text-embedding-v4`，保留独立的 v1/v2 历史文件。当前提供字段配置、写入前契约和临时索引集成测试；M1-21 的[独立构建与 Retriever](dense-retrieval.md) 沿用本契约。PostgreSQL 仍是来源和物理定位的权威存储。
 
 ## 版本与字段
 
