@@ -68,7 +68,7 @@ flowchart TD
 
 ### 核心技术方向
 
-`Python` · `FastAPI` · `LangGraph` · `OpenSearch` · `Neo4j` · `PostgreSQL` · `BGE-M3` · `BGE-Reranker` · `Langfuse`
+`Python` · `FastAPI` · `LangGraph` · `OpenSearch` · `Neo4j` · `PostgreSQL` · `text-embedding-v4` · `BGE-Reranker` · `Langfuse`
 
 - **检索**：先复现 Dense-only 基线，再独立实现 BM25、RRF、BGE 重排及型号 / 版本过滤；用消融实验量化增益。
 - **图谱**：以设备、部件、故障码、现象、候选原因、检查措施、来源证据为节点或实体；不允许无法追溯的关系直接变成确定结论。
@@ -120,7 +120,7 @@ uv run --frozen just down  # 停止服务，保留数据卷
 
 这两个入口已在 [M1-05 Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39795723492) 完成启动、停止、重建和数据回读验证。`just` 不自动加载 `.env`，服务变量由 Docker Compose 读取。
 
-M1-06 的[版本清单](docs/version-lock.md) 记录容器 digest、Docling / Alembic 发布文件指纹、BGE-M3 固定 revision 和最小向量 mapping。包与模型配置已核验指纹；业务迁移、向量模型推理及业务索引仍待后续任务实现。
+M1-06 的[版本清单](docs/version-lock.md) 记录容器 digest、Docling / Alembic 发布文件指纹和历史 BGE-M3 配置。当前 M1-20 使用阿里云 API；模型身份与 `dense-v3` mapping 同步，服务端未提供的权重 revision 记为 `null`。
 
 M1-07～14、M1-16 的 [PDF 解析说明](docs/pdf-parsing.md) 提供已登记手册的页范围解析、文档身份、主故障码规范化、章节/故障表行组切块、稳定证据 ID 及页码/表行元数据，并在输出前检查显式坏字符与无效表格结构；保留全部物理页，印刷页仅采用已核验映射，未知页为 `null`。显式警告/注意/危险标签通过 `safety_labels` 保留，含标签的连续章节将条件、列表和穿插表格放在同一块。运行前需安装锁定依赖并下载固定布局/表格模型，结果只写入本地 `data/processed/`。独立比较命令可识别同一文档、同一页范围重解析后的块变更，另报解析配置与来源元数据变化；报告保存在 `artifacts/`。M1-18 的独立命令核验快照后执行事务导入。
 
@@ -128,7 +128,9 @@ M1-15 的 [人工锚点审核说明](docs/reviews/m1-15-anchor-review.md) 和 33
 
 M1-17～18 的 [PostgreSQL 说明](docs/database.md) 提供文档、块、设备、工单、告警、导入任务和诊断记录七类表，以及显式幂等导入与事务回滚。迁移不自动导入语料；向量索引和诊断流程仍待实现。
 
-M1-19 的 [OpenSearch 字段说明](docs/opensearch.md) 提供 `dense-v2`、写入前校验及临时索引测试：保留精确型号/修订/码值，区分不限固件与未知固件，跨修订证据不会共用索引 ID。当前只用自造记录和人工向量验收字段，尚未索引实际语料或运行 embedding 模型。
+M1-19 的 [OpenSearch 字段说明](docs/opensearch.md) 提供写入前校验及临时索引测试：保留精确型号/修订/码值，区分不限固件与未知固件，跨修订证据不会共用索引 ID。M1-20 新建 `dense-v3` 更新向量模型身份；字段测试使用自造记录和人工向量，尚未索引实际语料。
+
+M1-20 的 [Embedding API 说明](docs/embedding.md) 提供阿里云百炼北京地域 `text-embedding-v4` 调用：1024 维、L2 归一化、每批最多 10 条，单条超出 4096 个 UTF-8 字节时拒绝发送。真实自造文本调用已验收；只发送显式输入，不下载本地 embedding 模型，输出留在 `artifacts/`。实际语料转换与 Dense-only Retriever 属于 M1-21。
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 
