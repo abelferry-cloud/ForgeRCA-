@@ -12,7 +12,12 @@ on:
       - tests/test_dev_commands.py
       - versions.lock.json
       - config/opensearch/**
-      - app/retrieval/index_schema.py
+      - app/retrieval/**
+      - scripts/dense.py
+      - scripts/corpus_allowlist.py
+      - scripts/validate_data.py
+      - tests/test_dense.py
+      - tests/test_retrieval_corpus.py
       - app/schemas/document.py
       - tests/test_opensearch_schema.py
       - tests/test_version_lock.py
@@ -28,7 +33,12 @@ on:
       - tests/test_dev_commands.py
       - versions.lock.json
       - config/opensearch/**
-      - app/retrieval/index_schema.py
+      - app/retrieval/**
+      - scripts/dense.py
+      - scripts/corpus_allowlist.py
+      - scripts/validate_data.py
+      - tests/test_dense.py
+      - tests/test_retrieval_corpus.py
       - app/schemas/document.py
       - tests/test_opensearch_schema.py
       - tests/test_version_lock.py
@@ -72,7 +82,10 @@ jobs:
       - name: Validate the locked mapping with synthetic vectors
         env:
           FORGERCA_TEST_OPENSEARCH: "1"
-        run: python -m unittest discover -s tests -p test_opensearch_schema.py -v
+        run: |
+          python -m unittest discover -s tests -p test_opensearch_schema.py -v
+          python -m unittest discover -s tests -p test_dense.py -v
+          python -m unittest discover -s tests -p test_retrieval_corpus.py -v
       - name: Write disposable records
         run: |
           docker compose exec -T postgres psql -U forgerca -d forgerca -v ON_ERROR_STOP=1 \

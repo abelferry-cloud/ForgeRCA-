@@ -26,7 +26,7 @@ M1-07 已在 `pdf_parser_models` 中固定 Docling 布局/表格模型的完整 
 
 字段类型和距离定义依据 [OpenSearch 2.17 文档](https://docs.opensearch.org/2.17/field-types/supported-field-types/knn-vector/)。单分片、零副本是本地验收设置，HNSW 参数不是调优结果。CI 创建一次性索引、回读 mapping 和人工向量，检查字段精确筛选、空值语义、跨修订身份及错误输入拒绝；没有调用 embedding 模型或索引语料。
 
-M1-19 已提供字段和写入前校验，M1-20 已实测独立 API 调用；语料转换/批量索引及检索仍待后续任务，不能直接把种子 JSONL 写入此 mapping。任何 mapping 变更须新建版本文件并更新清单 SHA-256；模型维度或身份改变时必须同时审查 mapping、重建索引，不能复用旧向量。
+M1-19 已提供字段和写入前校验，M1-20 已实测独立 API 调用；M1-21 通过[显式投影](dense-retrieval.md)构建独立新索引并提供 Dense-only 查询，不能直接把种子 JSONL 写入此 mapping。任何 mapping 变更须新建版本文件并更新清单 SHA-256；模型维度或身份改变时必须同时审查 mapping、重建索引，不能复用旧向量。
 
 ## 容器身份
 

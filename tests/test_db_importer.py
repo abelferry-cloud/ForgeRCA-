@@ -53,6 +53,30 @@ class ImportTransactionTests(unittest.TestCase):
             return {name: connection.scalar(self.sa.select(self.sa.func.count()).select_from(table))
                     for name, table in self.db.metadata.tables.items()}
 
+    def test_manual_projection_reads_only_successful_imports_and_preserves_revisions(self):
+        from app.retrieval.corpus import load_manual_records
+        from app.retrieval.index_schema import index_record_id
+
+        for revision in ("A", "B"):
+            prepared = self.prepared(revision=revision)
+            prepared["document"]["source_metadata"]["effective_date"] = "2024-03-30"
+            self.import_snapshot(self.engine, prepared)
+        self.import_events(self.engine, seed_events())
+        records = load_manual_records(self.engine)
+        self.assertEqual(len(records), 4)
+        self.assertEqual(len({index_record_id(record) for record in records}), 4)
+        self.assertEqual(len({record["evidence_id"] for record in records}), 2)
+        for record in records:
+            self.assertEqual(record["record_kind"], "manual_chunk")
+            self.assertEqual(record["available_at"], "2024-03-30T00:00:00+08:00")
+            self.assertEqual(record["firmware_state"], "unrestricted")
+        with self.engine.begin() as connection:
+            connection.execute(self.db.ingest_run.update().where(
+                self.db.ingest_run.c.document_key.like("SYNTHETIC@A:%")).values(run_status="failed"))
+        remaining = load_manual_records(self.engine)
+        self.assertEqual(len(remaining), 2)
+        self.assertTrue(all(record["document_revision"] == "B" for record in remaining))
+
     def test_replay_reuses_run_and_revision_keeps_same_pdf_and_evidence(self):
         prepared = self.prepared()
         first = self.import_snapshot(self.engine, prepared)

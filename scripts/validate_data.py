@@ -80,8 +80,9 @@ def load_data(root=ROOT):
     }
 
 
-def validate(data):
-    sources = unique(data["sources"], "source")
+def validate_corpus(source_records, corpus):
+    """Validate only retrieval inputs, without reading evaluation or graph files."""
+    sources = unique(source_records, "source")
     models = set()
     for source in sources.values():
         source_models = source.get("models")
@@ -99,12 +100,12 @@ def validate(data):
         require(source["redistribution"] == "not_verified", "Review source redistribution changes explicitly")
         require(source["verification"] == "downloaded_hash_and_text_checked", "Unverified source")
     # Validate document identity metadata and reject ambiguous source entries.
-    document_keys(data["sources"])
+    document_keys(source_records)
     for source in sources.values():
         printed_page_labels(source)
-    records = [record for group in data["corpus"].values() for record in group]
+    records = [record for group in corpus.values() for record in group]
     evidence = unique(records, "evidence")
-    for kind, group in data["corpus"].items():
+    for kind, group in corpus.items():
         require(group, f"Empty corpus: {kind}")
         for record in group:
             rid = record["id"]
@@ -139,7 +140,13 @@ def validate(data):
                 require(record["synthetic"], f"Seed event must be synthetic: {rid}")
                 require(locator == {"file": CORPUS_FILES[kind], "record_id": rid}, f"Invalid local locator: {rid}")
 
-    work_orders = validate_seed_events({kind: data["corpus"][kind] for kind in ("work_order", "alarm")})
+    work_orders = validate_seed_events({kind: corpus[kind] for kind in ("work_order", "alarm")})
+    return sources, evidence, work_orders, models
+
+
+def validate(data):
+    sources, evidence, work_orders, models = validate_corpus(data["sources"], data["corpus"])
+    records = list(evidence.values())
 
     graph = data["graph"]
     require(graph["purpose"] == "extraction_reference_not_runtime_graph", "Reference graph purpose changed")
