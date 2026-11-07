@@ -48,3 +48,5 @@ python -m unittest discover -s tests -p test_embedding.py -v
 ```
 
 尚未验证实际语料召回率、索引写入、查询过滤或诊断质量；这些属于 M1-21 及后续任务。M0-06 与 M1-15 的人工复核仍待人工填写。
+
+本地完整门禁：pytest 275 passed、8 skipped、570 subtests；系统 unittest 278 项、21 skipped；Ruff、数据校验及 116 个跟踪文件的敏感扫描通过。[Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42340502824) 在 `dc41812` 上通过新 mapping 和三服务重建回读；同次数据、PDF 与 PostgreSQL CI 均通过。
