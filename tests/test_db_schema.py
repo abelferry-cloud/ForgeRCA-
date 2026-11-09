@@ -66,6 +66,8 @@ class DatabaseSchemaTests(unittest.TestCase):
         self.assertIn("PRIMARY KEY (document_key, evidence_id)", sql)
         self.assertIn("BEGIN;", sql)
         self.assertIn("COMMIT;", sql)
+        self.assertIn("ALTER TABLE document ADD COLUMN retired_at TIMESTAMP WITH TIME ZONE", sql)
+        self.assertIn("ALTER TABLE ingest_run ADD COLUMN operation TEXT DEFAULT 'append' NOT NULL", sql)
 
     def test_offline_downgrade_drops_children_before_parents(self):
         from alembic import command
@@ -77,6 +79,17 @@ class DatabaseSchemaTests(unittest.TestCase):
         self.assertLess(sql.index("DROP TABLE alarm"), sql.index("DROP TABLE work_order"))
         self.assertLess(sql.index("DROP TABLE chunk"), sql.index("DROP TABLE document"))
         self.assertLess(sql.index("DROP TABLE diagnosis_run"), sql.index("DROP TABLE asset"))
+
+    def test_lifecycle_downgrade_removes_only_added_fields(self):
+        from alembic import command
+        from alembic.config import Config
+
+        output = io.StringIO()
+        command.downgrade(Config(str(ROOT / "alembic.ini"), output_buffer=output), "0002:0001", sql=True)
+        sql = output.getvalue()
+        self.assertIn("DROP COLUMN retired_at", sql)
+        self.assertIn("DROP COLUMN operation", sql)
+        self.assertNotIn("DROP TABLE", sql)
 
     def test_locked_migration_tool_matches_artifact_pin(self):
         lock = json.loads((ROOT / "versions.lock.json").read_text(encoding="utf-8"))

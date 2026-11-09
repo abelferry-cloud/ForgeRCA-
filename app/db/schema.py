@@ -23,6 +23,7 @@ document = sa.Table(
     sa.Column("source_url", sa.Text, nullable=False),
     sa.Column("accessed_at", sa.Date, nullable=False),
     sa.Column("source_metadata", JSON_VALUE, nullable=False),
+    sa.Column("retired_at", TIMESTAMP),
     sa.Column("created_at", TIMESTAMP, nullable=False, server_default=sa.func.now()),
     sa.UniqueConstraint("source_id", "revision"),
     sa.CheckConstraint("source_id ~ '^[A-Za-z0-9][A-Za-z0-9._-]*$' AND "
@@ -130,6 +131,7 @@ ingest_run = sa.Table(
     sa.Column("input_path", sa.Text, nullable=False),
     sa.Column("input_sha256", sa.String(64), nullable=False),
     sa.Column("parser", JSON_VALUE, nullable=False),
+    sa.Column("operation", sa.Text, nullable=False, server_default="append"),
     sa.Column("run_status", sa.Text, nullable=False, server_default="running"),
     sa.Column("started_at", TIMESTAMP, nullable=False, server_default=sa.func.now()),
     sa.Column("finished_at", TIMESTAMP),
@@ -137,6 +139,7 @@ ingest_run = sa.Table(
     sa.UniqueConstraint("ingest_run_id", "document_key"),
     sa.CheckConstraint("input_sha256 ~ '^[0-9a-f]{64}$'", name="input_sha256"),
     sa.CheckConstraint("jsonb_typeof(parser) = 'object'", name="parser"),
+    sa.CheckConstraint("operation IN ('append', 'replace')", name="operation"),
     sa.CheckConstraint("run_status IN ('running', 'succeeded', 'failed')", name="run_status"),
     sa.CheckConstraint("(run_status = 'running' AND finished_at IS NULL) OR "
                        "(run_status <> 'running' AND finished_at IS NOT NULL AND finished_at >= started_at)",

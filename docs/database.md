@@ -84,7 +84,7 @@ uv run --frozen --env-file .env python -m scripts.ingest --seed-events
 
 - `document.sha256` 是 PDF 字节摘要；`ingest_run.input_sha256` 是本次 JSON 输入文件的完整字节摘要。相同父文档、相同输入摘要重跑时复用成功运行，文档/块/运行数均不增加；文件改名不改变该判断。
 - 相同 PDF 可追加尚未导入的页；重复块保持原来的导入来源。不同 JSON 字节（例如格式化不同）可留下新的成功运行记录，但不会重复业务块。
-- 相同文档身份下来源元数据变化、相同证据 ID 下内容/引用变化，以及在已导入页上新增或遗漏已有块 ID，均拒绝整批导入。这里不执行重解析替换、删除或跨页重新分组；这些更新策略留待 M1-24。
+- 默认追加模式下，相同文档身份的来源元数据变化、同一证据 ID 的内容/引用变化，以及已导入页的新增或遗漏证据，均拒绝整批导入。M1-24 的显式替换与退役入口见下文；来源身份与元数据仍不可覆盖。
 - 修订升级使用新的 `document_key`，旧文档与块继续保留。同一来源/修订换了 PDF 字节会触发冲突。当前 manifest 内依然拒绝重复摘要；集成测试用先后登记的两个修订验证数据库并存，不放宽清单规则。
 - 在一个事务里插入文档、运行及全部块，成功后更新运行状态；任何异常都回滚该事务，包括运行记录。不会留下半批块，也不在回滚后额外保存失败审计行。
 - 插入文档后以父文档行锁串行化同文档写入，并在锁内检查已成功的输入，避免两个同时启动的导入各建一条运行。依赖 PostgreSQL 默认 `READ COMMITTED`、[行锁](https://www.postgresql.org/docs/16/explicit-locking.html#LOCKING-ROWS) 与 [ON CONFLICT](https://docs.sqlalchemy.org/en/21/dialects/postgresql.html#insert-on-conflict-upsert)；未提供跨数据库后端兼容层。
@@ -94,3 +94,29 @@ uv run --frozen --env-file .env python -m scripts.ingest --seed-events
 `knowledge.jsonl` 是项目知识注释，不导入为厂商 `document/chunk`。导入器不调用会读取评测/参考图的 `load_data()`；不读取 `data/evaluation/`、`data/graph/`、审核资料，也不改变检索 allowlist。原 PDF 和解析快照仍留在忽略目录，数据库不会保存原 PDF 文件。
 
 2026-11-06 本地已核验硬件手册第 152 页的 M1-16 快照（1 块、`warning` 标签）以及现有 8 条工单和 16 条告警的导入准备；这不是本机数据库写入验收。[Linux PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42239312605) 的 7 项输入测试、13 项数据库/迁移测试全部通过：并发相同输入只产生一个运行，第二块写入异常时文档/运行/块均回滚，事件冲突回滚此前新增资产与工单，修订并存/新页追加/重切块及遗漏拒绝均通过。本地 pytest 为 256 passed、7 skipped、465 subtests，系统 unittest 为 258 项、20 项跳过；Ruff、原 PDF/数据及敏感文件检查通过。
+
+## 显式替换与文档退役（M1-24，来源侧）
+
+先执行 `uv run --frozen --env-file .env alembic upgrade head`。新增的 `0002` 迁移保留 `0001`，为已有文档增加可空 `retired_at`，为已有导入审计增加默认 `append` 的 `operation`。当前代码需要最新迁移；不自动修改现有数据库。
+
+```bash
+# 仍先通过原 PDF 指纹、完整页范围与当前解析契约检查
+uv run --frozen --env-file .env python -m scripts.ingest \
+  --snapshot data/processed/<new-snapshot>.json --replace
+
+# 只退役指定完整文档身份；用真实 document_key 替换占位符
+uv run --frozen --env-file .env python -m scripts.ingest \
+  --retire-document '<source_id>@<revision>:<完整 SHA-256>'
+```
+
+`--replace` 只用于已存在的父文档。父文档行锁内检查其仍处于可用状态，再替换新快照声明页范围内的当前块，记录 `operation=replace` 的成功导入。若某个旧块跨越该范围之外的物理页，拒绝部分覆盖，必须提供包含该块全部页的快照。范围外的块保持原状；范围内的新身份、同身份新正文和空页导致的删除均通过同一事务处理。任何中途错误都会回滚旧块删除、新块插入及运行记录。
+
+报告的 `removed_chunks` / `inserted_chunks` 分别是这次实际移除/插入的当前行数，不是向量计算数；替换会将该范围的新块关联到本次快照运行。原运行记录继续保留，但不是历史块正文归档；旧快照文件需按原有本地资料保留规则保管。同一个当前快照再次替换时返回 `reused=true`，不增行。替换后重放旧输入不会仅凭旧摘要直接视为成功：普通追加拒绝内容冲突；显式 `--replace` 可以把当前范围替换回已验证的旧快照，并产生新的审计运行。
+
+退役是数据库手册记录的逻辑删除：写入一次 `retired_at`，保留原 PDF、块和导入审计，不影响其他修订。重复退役保持原时间；未知文档报错。退役后的手册块被索引语料投影和引用回查排除，普通导入及显式替换都不能自动恢复。此版本不提供重新启用入口。项目注释与合成事件仍由各自白名单文件管理，不冒充该手册的子块；若要下线这些独立记录，需要更新对应文件。
+
+来源侧事务不自动更新 OpenSearch。旧索引命中已变更/退役的块时，引用回查会拒绝报告；需使用后续增量同步或重新构建后的索引。M1-24 的索引同步、旧向量复用与跨服务失败测试在下一份 PR 完成，当前不宣称数据库与 OpenSearch 具备统一事务。
+
+`0002 → 0001` 会移除退役标记和操作标识，不能在在线保留数据的服务上用降级来“撤销删除”；降级测试仍只面向明确可丢弃的数据库。Windows Docker Engine 当前不可用，事务、并发与迁移数据保留以独立 Linux PostgreSQL CI 验收。
+
+2026-11-09 [PR #49](https://github.com/abelferry-cloud/ForgeRCA-/pull/49) 的 [PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42636256460) 通过 8 项输入测试和 24 项数据库测试：在已有 0001 数据上升级并检查 schema，验证范围替换、空页删除、旧输入重放、并发幂等、写入后失败回滚和退役隔离。Compose 与解析器 CI 同时通过。本地 pytest 316 passed、20 skipped、706 subtests；系统 unittest 331 项、33 skipped；Ruff、数据与敏感文件检查通过。本 PR 仅完成 M1-24 的来源侧，索引增量同步仍未完成。

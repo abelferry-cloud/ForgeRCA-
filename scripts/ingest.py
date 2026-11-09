@@ -1,4 +1,4 @@
-"""Import one verified PDF snapshot or the two explicit synthetic event files."""
+"""Import a verified snapshot or seed events, explicitly replace pages or retire a manual."""
 
 import argparse
 import hashlib
@@ -12,7 +12,7 @@ from app.ingestion.evidence import identify_chunk
 from app.ingestion.incremental import validate_snapshot
 from app.ingestion.metadata import locate_chunk
 from app.ingestion.quality import validate_document_quality
-from app.schemas.document import document_keys
+from app.schemas.document import document_keys, parse_key
 from app.schemas.events import EVENT_FILES, validate_seed_events
 from scripts.corpus_allowlist import assert_indexable
 from scripts.download_sources import verify_file
@@ -81,17 +81,29 @@ def main(argv=None):
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--snapshot", type=Path)
     mode.add_argument("--seed-events", action="store_true")
+    mode.add_argument("--retire-document", metavar="DOCUMENT_KEY")
+    parser.add_argument("--replace", action="store_true", help="Explicitly replace the verified snapshot's page range")
     args = parser.parse_args(argv)
+    if args.replace and not args.snapshot:
+        parser.error("--replace requires --snapshot")
     try:
-        prepared = load_snapshot(args.snapshot) if args.snapshot else load_seed_events()
+        if args.retire_document:
+            parse_key(args.retire_document)
+        else:
+            prepared = load_snapshot(args.snapshot) if args.snapshot else load_seed_events()
         from sqlalchemy.exc import SQLAlchemyError
 
         from app.db.connection import create_db_engine
-        from app.ingestion.importer import import_seed_events, import_snapshot
+        from app.ingestion.importer import import_seed_events, import_snapshot, retire_document
 
         engine = create_db_engine()
         try:
-            report = import_snapshot(engine, prepared) if args.snapshot else import_seed_events(engine, prepared)
+            if args.retire_document:
+                report = retire_document(engine, args.retire_document)
+            elif args.snapshot:
+                report = import_snapshot(engine, prepared, replace=args.replace)
+            else:
+                report = import_seed_events(engine, prepared)
         except SQLAlchemyError as error:
             # Driver diagnostics can contain parameters or rejected row text.
             raise ValueError("Database import failed; rolled back; check migration and connection") from error
