@@ -48,6 +48,24 @@
       "document_prefix": ""
     }
   },
+  "generation": {
+    "provider": "aliyun_dashscope",
+    "region": "cn-beijing",
+    "model_id": "qwen-plus-2025-12-01",
+    "revision": null,
+    "implementation_milestone": "M1-23",
+    "verification": "api_contract",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "prompt_version": "evidence-candidates-v1",
+    "inference": {
+      "enable_thinking": false,
+      "response_format": "json_object",
+      "temperature": 0,
+      "max_tokens": 2048,
+      "timeout_seconds": 60,
+      "max_input_utf8_bytes": 65536
+    }
+  },
   "opensearch_mapping": {
     "version": "dense-v3",
     "path": "config/opensearch/dense-v3.json",

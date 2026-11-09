@@ -60,3 +60,5 @@ python scripts/verify_version_artifacts.py
 2026-10-23 验收记录：Windows 本地 Python 3.12.10 / uv 0.10.12，pytest 93 passed + 86 subtests、uv 环境 unittest 93 项通过，Ruff、数据校验与 66 个跟踪文件的敏感文件扫描通过。联网脚本实算 7 个文件指纹均匹配。[Linux CI #39892392668](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/39892392668) 在提交 `36ef2cd` 上用固定 digest 完成三服务启动、mapping 正反例、保留卷重建后的记录回读与测试卷清理，任务耗时 1 分 32 秒。
 
 更新任一版本时，在新分支核验上游文件，更新清单和实际使用处，运行测试并在 PR 记录原因与证据。新增运行依赖时先验证安装/调用，再更新 `pyproject.toml` 与 `uv.lock`；完整推理/解析环境必须包含传递依赖与模型工件版本。本清单不提交 wheel、权重、第三方 PDF、数据库卷或索引。
+
+M1-23 的 `generation` 条目固定阿里云北京 `qwen-plus-2025-12-01` 快照、提示版本及请求参数。客户端拒绝模型/提供商错配，真实 API 小样本与用量记录见[受约束生成](generation.md)。不下载生成模型，也不把不可取得的 API 权重摘要写成已核验。

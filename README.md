@@ -130,9 +130,11 @@ M1-17～18 的 [PostgreSQL 说明](docs/database.md) 提供文档、块、设备
 
 M1-19 的 [OpenSearch 字段说明](docs/opensearch.md) 提供写入前校验及临时索引测试：保留精确型号/修订/码值，区分不限固件与未知固件，跨修订证据不会共用索引 ID。M1-20 新建 `dense-v3` 更新向量模型身份；字段测试使用自造记录和人工向量，尚未索引实际语料。
 
-M1-20 的 [Embedding API 说明](docs/embedding.md) 提供阿里云百炼北京地域 `text-embedding-v4` 调用：1024 维、L2 归一化、每批最多 10 条，单条超出 4096 个 UTF-8 字节时拒绝发送。真实自造文本调用已验收；只发送显式输入，不下载本地 embedding 模型，输出留在 `artifacts/`。实际语料转换与 Dense-only Retriever 属于 M1-21。
+M1-20 的 [Embedding API 说明](docs/embedding.md) 提供阿里云百炼北京地域 `text-embedding-v4` 调用：1024 维、L2 归一化、每批最多 10 条，单条超出 4096 个 UTF-8 字节时拒绝发送。真实自造文本调用已验收；只发送显式输入，不下载本地 embedding 模型，输出留在 `artifacts/`。实际语料转换与 Dense-only Retriever 已在 M1-21 接入。
 
 M1-21 的 [Dense-only 检索](docs/dense-retrieval.md) 提供 `python -m scripts.dense index/query`：将三个白名单文件和已入库手册块投影到独立新索引，按型号、可用时间和明确的固件适用性执行 k-NN Top-k，按完整证据身份去重。34 条实际输入的阿里云向量化准备已验证；本机 Docker 不可用，真实服务集成由 Linux CI 验证。M1-22 已让查询默认执行[引用回查](docs/citations.md)，核对正文与来源版本并输出定位器；失败不发布部分报告。不把检索分数当作诊断概率。
+
+M1-23 的[受约束生成](docs/generation.md)提供 `python -m scripts.dense answer`，使用北京 `qwen-plus-2025-12-01` 一次解释已核验证据，校验完整引用身份及逐字摘录；空证据不调用生成模型并返回 `insufficient`。候选解释不是当前设备的确诊结果，引用校验不能代替语义与领域审核。
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 

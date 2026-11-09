@@ -116,8 +116,8 @@ class Settings:
     embedding_model: str = "text-embedding-v4"
     dashscope_api_key: Secret = Secret()
     reranker_model: str = ""
-    llm_provider: str = ""
-    llm_model: str = ""
+    llm_provider: str = "aliyun_dashscope"
+    llm_model: str = "qwen-plus-2025-12-01"
     llm_api_key: Secret = Secret()
 
     langfuse_host: str = ""
@@ -156,8 +156,8 @@ class Settings:
             neo4j_user=_text(source, "NEO4J_USER", "neo4j"),
             embedding_model=_text(source, "EMBEDDING_MODEL", "text-embedding-v4"),
             reranker_model=_text(source, "RERANKER_MODEL"),
-            llm_provider=_text(source, "LLM_PROVIDER"),
-            llm_model=_text(source, "LLM_MODEL"),
+            llm_provider=_text(source, "LLM_PROVIDER", "aliyun_dashscope"),
+            llm_model=_text(source, "LLM_MODEL", "qwen-plus-2025-12-01"),
             langfuse_host=_text(source, "LANGFUSE_HOST"),
             **credentials,
         )

@@ -1,6 +1,6 @@
 # Dense-only 检索（M1-21）
 
-本阶段提供明确的语料投影、新索引构建和查询命令，使用 M1-20 的阿里云北京 `text-embedding-v4`。依赖现有本地 OpenSearch 和 PostgreSQL，不新增 SDK、不下载 embedding 模型。M1-22 已接入[引用回查](citations.md)，生成和逐题评测仍未实现。
+本阶段提供明确的语料投影、新索引构建和查询命令，使用 M1-20 的阿里云北京 `text-embedding-v4`。依赖现有本地 OpenSearch 和 PostgreSQL，不新增 SDK、不下载 embedding 模型。M1-22 已接入[引用回查](citations.md)，M1-23 的 `answer` 子命令增加[一次受约束生成](generation.md)；逐题评测仍未实现。
 
 ## 索引输入
 
