@@ -41,4 +41,6 @@ python -m unittest discover -s tests -p test_dense.py -v
 
 2026-11-09 本机已回查当前 33 条白名单记录；另通过 M1-18 原 PDF/解析快照验证入口，核对硬件手册 1 块的定位器，得到物理页 152、显式印刷页 `152` 及原来源页链接。该次只验证文件回查与手册入库准备数据，没有实际数据库读写、OpenSearch 检索或模型调用。本地 pytest 303 passed、12 skipped、675 subtests；引用回查的 9 项离线测试通过。
 
+[PR #45](https://github.com/abelferry-cloud/ForgeRCA-/pull/45) 的 [PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42591840790) 已通过 15 项数据库测试（含引用回查），[Compose / OpenSearch CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42591840958) 已通过 16 项 Dense 测试（含真实检索后回查）及 9 项引用离线测试。系统 unittest 310 项运行成功、25 项跳过。
+
 Windows Docker Engine 当前不可用，本机完整数据库/检索链路尚未验收。M0-06 与 M1-15 的人工复核仍待人工签署。
