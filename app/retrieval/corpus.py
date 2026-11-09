@@ -91,7 +91,8 @@ def load_manual_rows(engine, identities=None):
         db.chunk.join(db.document).join(db.ingest_run, sa.and_(
             db.chunk.c.ingest_run_id == db.ingest_run.c.ingest_run_id,
             db.chunk.c.document_key == db.ingest_run.c.document_key,
-        ))).where(db.ingest_run.c.run_status == "succeeded").order_by(db.chunk.c.document_key, db.chunk.c.evidence_id)
+        ))).where(db.ingest_run.c.run_status == "succeeded", db.document.c.retired_at.is_(None)).order_by(
+            db.chunk.c.document_key, db.chunk.c.evidence_id)
     if identities is not None:
         query = query.where(sa.tuple_(db.chunk.c.document_key, db.chunk.c.evidence_id).in_(identities))
     with engine.connect() as connection:

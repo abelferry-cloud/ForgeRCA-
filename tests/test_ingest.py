@@ -18,12 +18,13 @@ from app.schemas.events import EVENT_FILES, validate_seed_events
 from scripts import ingest
 
 
-def write_snapshot(root, *, revision="A", pages=(1, 2), filename="snapshot.json"):
+def write_snapshot(root, *, revision="A", pages=(1, 2), filename="snapshot.json", mutate=None):
     pdf = b"%PDF-synthetic fixture only"
     source = {"id": "SYNTHETIC", "document_code": "SYNTHETIC-MANUAL", "revision": revision,
               "sha256": hashlib.sha256(pdf).hexdigest(), "models": ["TEST-MODEL"], "firmware_scope": None,
               "url": "https://example.com/manual.pdf", "accessed_at": "2026-11-06",
-              "local_path": "data/raw/abb/synthetic.pdf", "bytes": len(pdf), "pages": 4}
+              "local_path": "data/raw/abb/synthetic.pdf", "bytes": len(pdf), "pages": 4,
+              "effective_date": "2024-03-30"}
     for name in ("data/raw/abb", "data/processed", "data/sources"):
         (root / name).mkdir(parents=True, exist_ok=True)
     (root / source["local_path"]).write_bytes(pdf)
@@ -39,6 +40,8 @@ def write_snapshot(root, *, revision="A", pages=(1, 2), filename="snapshot.json"
                                       "bbox": {"l": 10, "t": 10 + offset * 30, "r": 100,
                                                "b": 30 + offset * 30, "coord_origin": "TOPLEFT"}}]})
             document["body"]["children"].append({"$ref": ref})
+    if mutate is not None:
+        mutate(document)
     key = DocumentKey.from_source(source)
     result = {"schema_version": 1, "source": {"document_key": key.value, **asdict(key)}, "document": document,
               "parser": {"page_range": [min(pages), max(pages)], "packages": {"fixture": "1"},
@@ -155,3 +158,17 @@ class ImportPreparationTests(unittest.TestCase):
                 with self.assertRaises(SystemExit) as invalid:
                     ingest.main(["--snapshot", "bad.json"])
                 self.assertEqual(invalid.exception.code, 1)
+
+    def test_replace_and_retire_modes_require_explicit_valid_inputs(self):
+        with patch("sys.stderr", new_callable=io.StringIO), \
+                patch.object(ingest, "load_snapshot") as snapshot, patch.object(ingest, "load_seed_events") as seeds:
+            for args in (["--seed-events", "--replace"], ["--retire-document", "bad-key", "--replace"],
+                         ["--snapshot", "x.json", "--retire-document", "bad-key"]):
+                with self.subTest(args=args), self.assertRaises(SystemExit) as caught:
+                    ingest.main(args)
+                self.assertEqual(caught.exception.code, 2)
+            with self.assertRaises(SystemExit) as caught:
+                ingest.main(["--retire-document", "bad-key"])
+            self.assertEqual(caught.exception.code, 1)
+            snapshot.assert_not_called()
+            seeds.assert_not_called()

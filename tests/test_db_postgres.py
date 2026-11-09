@@ -31,9 +31,8 @@ class PostgreSQLMigrationTests(unittest.TestCase):
                                  "Use a new empty test database")
             self.assertIsNone(MigrationContext.configure(connection).get_current_revision())
         config = Config(str(ROOT / "alembic.ini"))
-        command.upgrade(config, "head")
+        command.upgrade(config, "0001")
         self.addCleanup(command.downgrade, config, "base")
-        command.check(config)
         with engine.connect() as connection:
             self.assertEqual(set(sa.inspect(connection).get_table_names()),
                              set(db.metadata.tables) | {"alembic_version"})
@@ -92,6 +91,13 @@ class PostgreSQLMigrationTests(unittest.TestCase):
                 **ingest, "ingest_run_id": uuid4(), "document_key": None, "run_status": "failed",
                 "finished_at": timestamp, "error_code": "synthetic_failure",
             }))
+        # Upgrade existing rows, rather than testing only an empty latest schema.
+        command.upgrade(config, "head")
+        command.check(config)
+        with engine.connect() as connection:
+            self.assertEqual(MigrationContext.configure(connection).get_current_revision(), "0002")
+            self.assertTrue(all(value is None for value in connection.scalars(sa.select(db.document.c.retired_at))))
+            self.assertEqual(set(connection.scalars(sa.select(db.ingest_run.c.operation))), {"append"})
         invalid = [
             (db.document, doc),
             (db.document, {**doc, "sha256": "d" * 64, "document_key": "SYNTHETIC@A:" + "d" * 64}),
@@ -112,6 +118,7 @@ class PostgreSQLMigrationTests(unittest.TestCase):
             (db.alarm, {**alarm, "alarm_id": "AL3", "available_at": timestamp}),
             (db.ingest_run, {**ingest, "ingest_run_id": uuid4(), "run_status": "succeeded"}),
             (db.ingest_run, {**ingest, "ingest_run_id": uuid4(), "input_sha256": "short"}),
+            (db.ingest_run, {**ingest, "ingest_run_id": uuid4(), "operation": "unknown"}),
             (db.diagnosis_run, {**diagnosis, "diagnosis_id": uuid4(), "run_status": "succeeded",
                                 "finished_at": timestamp}),
             (db.diagnosis_run, {**diagnosis, "diagnosis_id": uuid4(), "status": "supported"}),

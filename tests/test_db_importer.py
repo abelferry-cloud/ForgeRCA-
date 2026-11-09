@@ -188,6 +188,176 @@ class ImportTransactionTests(unittest.TestCase):
         self.assertEqual(len({report["ingest_run_id"] for report in reports}), 1)
         self.assertEqual(self.counts()["ingest_run"], 1)
 
+    def changed_snapshot(self):
+        def change(document):
+            document["texts"][1]["text"] = "警告！修订内容1"
+            document["texts"][3]["prov"][0]["bbox"]["l"] = 11
+        return self.prepared(mutate=change, filename="changed.json")
+
+    def stored_chunks(self):
+        with self.engine.connect() as connection:
+            return [dict(row) for row in connection.execute(self.sa.select(self.db.chunk).order_by(
+                self.db.chunk.c.document_key, self.db.chunk.c.evidence_id)).mappings()]
+
+    def test_replace_changes_content_and_anchors_removes_blocks_and_preserves_other_pages(self):
+        original = self.prepared()
+        self.import_snapshot(self.engine, original)
+        self.import_snapshot(self.engine, self.prepared(pages=(3, 4), filename="outside.json"))
+        outside = [row for row in self.stored_chunks() if row["locations"][0]["pdf_page"] >= 3]
+        replacement = self.changed_snapshot()
+        report = self.import_snapshot(self.engine, replacement, replace=True)
+        self.assertEqual((report["inserted_chunks"], report["removed_chunks"]), (2, 2))
+        current = {row["evidence_id"]: row for row in self.stored_chunks()}
+        self.assertEqual(original["chunks"][0]["evidence_id"], replacement["chunks"][0]["evidence_id"])
+        self.assertEqual(current[original["chunks"][0]["evidence_id"]]["text"], replacement["chunks"][0]["text"])
+        self.assertNotIn(original["chunks"][1]["evidence_id"], current)
+        self.assertEqual([row for row in self.stored_chunks() if row["locations"][0]["pdf_page"] >= 3], outside)
+        replay = self.import_snapshot(self.engine, replacement, replace=True)
+        self.assertTrue(replay["reused"])
+        self.assertEqual(replay["ingest_run_id"], report["ingest_run_id"])
+        self.assertEqual((replay["inserted_chunks"], replay["removed_chunks"]), (0, 0))
+        self.assertEqual(self.counts()["ingest_run"], 3)
+
+        def remove_second_page(document):
+            document["body"]["children"] = document["body"]["children"][:2]
+        removed = self.prepared(mutate=remove_second_page, filename="removed.json")
+        self.assertEqual(len(removed["chunks"]), 1)
+        self.import_snapshot(self.engine, removed, replace=True)
+        self.assertEqual(self.counts()["chunk"], 3)
+        with self.engine.connect() as connection:
+            self.assertEqual(sorted(connection.scalars(self.sa.select(self.db.ingest_run.c.operation))),
+                             ["append", "append", "replace", "replace"])
+
+    def test_historical_input_hash_does_not_bypass_current_content_checks(self):
+        original = self.prepared()
+        self.import_snapshot(self.engine, original)
+        self.import_snapshot(self.engine, self.changed_snapshot(), replace=True)
+        before = self.stored_chunks()
+        with self.assertRaises(ValueError):
+            self.import_snapshot(self.engine, original)
+        self.assertEqual(self.stored_chunks(), before)
+        restored = self.import_snapshot(self.engine, original, replace=True)
+        self.assertFalse(restored["reused"])
+        self.assertEqual(self.counts()["ingest_run"], 3)
+        self.assertTrue(self.import_snapshot(self.engine, original, replace=True)["reused"])
+
+    def test_empty_replacement_removes_current_chunks_but_preserves_audit(self):
+        original = self.prepared()
+        self.import_snapshot(self.engine, original)
+
+        def empty_pages(document):
+            document["body"]["children"] = []
+            document["texts"] = []
+        replacement = self.prepared(mutate=empty_pages, filename="empty.json")
+        self.assertEqual(replacement["chunks"], [])
+        report = self.import_snapshot(self.engine, replacement, replace=True)
+        self.assertEqual((report["inserted_chunks"], report["removed_chunks"]), (0, 2))
+        self.assertEqual(self.counts()["chunk"], 0)
+        self.assertEqual(self.counts()["ingest_run"], 2)
+        self.assertTrue(self.import_snapshot(self.engine, replacement, replace=True)["reused"])
+        with self.assertRaises(ValueError):
+            self.import_snapshot(self.engine, original)
+
+    def test_replace_rejects_missing_parent_and_partial_cross_page_coverage(self):
+        with self.assertRaisesRegex(ValueError, "existing document"):
+            self.import_snapshot(self.engine, self.prepared(), replace=True)
+        self.assertTrue(all(count == 0 for count in self.counts().values()))
+
+        def join_sections(document):
+            document["body"]["children"] = [child for child in document["body"]["children"]
+                                               if child["$ref"] != "#/texts/2"]
+        original = self.prepared(mutate=join_sections)
+        self.assertEqual(len(original["chunks"]), 1)
+        self.assertEqual([p["pdf_page"] for p in original["chunks"][0]["locations"]], [1, 2])
+        self.import_snapshot(self.engine, original)
+        before = self.stored_chunks()
+        with self.assertRaisesRegex(ValueError, "every page"):
+            self.import_snapshot(self.engine, self.prepared(pages=(1,), filename="partial.json"), replace=True)
+        self.assertEqual(self.stored_chunks(), before)
+        self.assertEqual(self.counts()["ingest_run"], 1)
+
+    def test_replace_failure_restores_deleted_rows_and_does_not_publish_a_run(self):
+        self.import_snapshot(self.engine, self.prepared())
+        replacement = self.changed_snapshot()
+        before, counts = self.stored_chunks(), self.counts()
+        inserted = 0
+
+        def fail_after_first_insert(connection, cursor, statement, parameters, context, executemany):
+            nonlocal inserted
+            if statement.startswith("INSERT INTO chunk"):
+                inserted += 1
+                if inserted == 1:
+                    raise RuntimeError("synthetic replacement failure")
+        self.sa.event.listen(self.engine, "after_cursor_execute", fail_after_first_insert)
+        try:
+            with self.assertRaisesRegex(RuntimeError, "replacement failure"):
+                self.import_snapshot(self.engine, replacement, replace=True)
+        finally:
+            self.sa.event.remove(self.engine, "after_cursor_execute", fail_after_first_insert)
+        self.assertEqual(self.stored_chunks(), before)
+        self.assertEqual(self.counts(), counts)
+
+    def test_concurrent_identical_replacements_publish_one_run(self):
+        self.import_snapshot(self.engine, self.prepared())
+        replacement = self.changed_snapshot()
+        barrier = Barrier(2)
+
+        def replace():
+            barrier.wait(timeout=10)
+            return self.import_snapshot(self.engine, replacement, replace=True)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(replace) for _ in range(2)]
+            reports = [future.result(timeout=20) for future in futures]
+        self.assertEqual(sorted(report["inserted_chunks"] for report in reports), [0, 2])
+        self.assertEqual(len({report["ingest_run_id"] for report in reports}), 1)
+        self.assertEqual(self.counts()["ingest_run"], 2)
+
+    def test_retirement_preserves_audit_and_other_revisions_and_prevents_resurrection(self):
+        from app.ingestion.importer import retire_document
+        from app.retrieval.citations import CitationError, resolve_hits
+        from app.retrieval.corpus import load_manual_records
+        from test_citations import hit
+
+        snapshots = [self.prepared(revision=revision) for revision in ("A", "B")]
+        for prepared in snapshots:
+            self.import_snapshot(self.engine, prepared)
+        first = snapshots[0]
+        key = first["document"]["document_key"]
+        old = next(row for row in load_manual_records(self.engine) if row["document_key"] == key)
+        counts = self.counts()
+        report = retire_document(self.engine, key)
+        self.assertFalse(report["reused"])
+        self.assertEqual(retire_document(self.engine, key), {**report, "reused": True})
+        self.assertEqual(self.counts(), counts)
+        self.assertEqual({row["document_revision"] for row in load_manual_records(self.engine)}, {"B"})
+        with self.assertRaises(CitationError):
+            resolve_hits([hit(old)], engine=self.engine)
+        for replace in (False, True):
+            with self.subTest(replace=replace), self.assertRaisesRegex(ValueError, "retired"):
+                self.import_snapshot(self.engine, first, replace=replace)
+        with self.assertRaisesRegex(ValueError, "does not exist"):
+            retire_document(self.engine, key.replace("@A:", "@MISSING:"))
+        self.assertEqual(self.counts(), counts)
+
+    def test_retirement_database_error_rolls_back_visibility_change(self):
+        from app.ingestion.importer import retire_document
+        from app.retrieval.corpus import load_manual_records
+
+        prepared = self.prepared()
+        self.import_snapshot(self.engine, prepared)
+        before = load_manual_records(self.engine)
+
+        def fail_after_retirement(connection, cursor, statement, parameters, context, executemany):
+            if statement.startswith("UPDATE document"):
+                raise RuntimeError("synthetic retirement failure")
+        self.sa.event.listen(self.engine, "after_cursor_execute", fail_after_retirement)
+        try:
+            with self.assertRaisesRegex(RuntimeError, "retirement failure"):
+                retire_document(self.engine, prepared["document"]["document_key"])
+        finally:
+            self.sa.event.remove(self.engine, "after_cursor_execute", fail_after_retirement)
+        self.assertEqual(load_manual_records(self.engine), before)
+
     def test_events_replay_without_duplicates_and_preserve_unknown_firmware(self):
         events = seed_events()
         self.assertEqual(self.import_events(self.engine, events), {"asset": 1, "work_order": 1, "alarm": 1})
