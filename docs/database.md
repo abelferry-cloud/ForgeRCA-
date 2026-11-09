@@ -118,3 +118,5 @@ uv run --frozen --env-file .env python -m scripts.ingest \
 来源侧事务不自动更新 OpenSearch。旧索引命中已变更/退役的块时，引用回查会拒绝报告；需使用后续增量同步或重新构建后的索引。M1-24 的索引同步、旧向量复用与跨服务失败测试在下一份 PR 完成，当前不宣称数据库与 OpenSearch 具备统一事务。
 
 `0002 → 0001` 会移除退役标记和操作标识，不能在在线保留数据的服务上用降级来“撤销删除”；降级测试仍只面向明确可丢弃的数据库。Windows Docker Engine 当前不可用，事务、并发与迁移数据保留以独立 Linux PostgreSQL CI 验收。
+
+2026-11-09 [PR #49](https://github.com/abelferry-cloud/ForgeRCA-/pull/49) 的 [PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42636256460) 通过 8 项输入测试和 24 项数据库测试：在已有 0001 数据上升级并检查 schema，验证范围替换、空页删除、旧输入重放、并发幂等、写入后失败回滚和退役隔离。Compose 与解析器 CI 同时通过。本地 pytest 316 passed、20 skipped、706 subtests；系统 unittest 331 项、33 skipped；Ruff、数据与敏感文件检查通过。本 PR 仅完成 M1-24 的来源侧，索引增量同步仍未完成。
