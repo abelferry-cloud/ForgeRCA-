@@ -33,6 +33,10 @@ INDEXABLE_CORPUS_FILES = (
     "data/corpus/alarms.jsonl",
 )
 
+# This separate store is reached through successful imports, never by scanning
+# data/processed. document and ingest_run supply identity and success metadata.
+INDEXABLE_DATABASE_TABLES = ("chunk",)
+
 # Paths that must stay out of every index even though they parse as data.
 FORBIDDEN_PREFIXES = (
     "data/evaluation/",

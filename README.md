@@ -126,11 +126,13 @@ M1-07～14、M1-16 的 [PDF 解析说明](docs/pdf-parsing.md) 提供已登记�
 
 M1-15 的 [人工锚点审核说明](docs/reviews/m1-15-anchor-review.md) 和 33 项定位清单已准备；所有结论待人工填写。含原文的本地阅读包保存在忽略的 `artifacts/reviews/`，不会纳入检索语料。
 
-M1-17～18 的 [PostgreSQL 说明](docs/database.md) 提供文档、块、设备、工单、告警、导入任务和诊断记录七类表，以及显式幂等导入与事务回滚。迁移不自动导入语料；向量索引和诊断流程仍待实现。
+M1-17～18 的 [PostgreSQL 说明](docs/database.md) 提供文档、块、设备、工单、告警、导入任务和诊断记录七类表，以及显式幂等导入与事务回滚。迁移不自动导入语料；M1-21 的索引入口只读取成功导入的手册块，诊断流程仍待实现。
 
 M1-19 的 [OpenSearch 字段说明](docs/opensearch.md) 提供写入前校验及临时索引测试：保留精确型号/修订/码值，区分不限固件与未知固件，跨修订证据不会共用索引 ID。M1-20 新建 `dense-v3` 更新向量模型身份；字段测试使用自造记录和人工向量，尚未索引实际语料。
 
 M1-20 的 [Embedding API 说明](docs/embedding.md) 提供阿里云百炼北京地域 `text-embedding-v4` 调用：1024 维、L2 归一化、每批最多 10 条，单条超出 4096 个 UTF-8 字节时拒绝发送。真实自造文本调用已验收；只发送显式输入，不下载本地 embedding 模型，输出留在 `artifacts/`。实际语料转换与 Dense-only Retriever 属于 M1-21。
+
+M1-21 的 [Dense-only 检索](docs/dense-retrieval.md) 提供 `python -m scripts.dense index/query`：将三个白名单文件和已入库手册块投影到独立新索引，按型号、可用时间和明确的固件适用性执行 k-NN Top-k，按完整证据身份去重。34 条实际输入的阿里云向量化准备已验证；本机 Docker 不可用，真实服务集成由 Linux CI 验证。引用原文回查属于 M1-22，不把检索分数当作诊断概率。
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 
