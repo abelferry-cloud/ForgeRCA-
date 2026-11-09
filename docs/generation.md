@@ -45,4 +45,6 @@ uv run --frozen python -m scripts.dense answer \
 
 本地 pytest 314 passed、12 skipped、702 subtests；系统 unittest 321 项、25 skipped；11 项生成专项测试覆盖 HTTP/JSON、模型与密钥配置、引用篡改、空证据、合成降级和命令发布边界。Linux CI 的真实 OpenSearch 测试使用合成向量与生成响应，核对检索→回查→生成引用绑定；API 密钥不进入 CI。
 
+[PR #47](https://github.com/abelferry-cloud/ForgeRCA-/pull/47) 的 [Compose / OpenSearch CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42631482877) 已通过 16 项 Dense 测试（含真实检索后生成引用绑定）和 11 项生成专项测试；[PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42631482960) 与 [解析器 CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42631482595) 同时通过。
+
 Windows Docker Engine 当前不可用。M0-06/M1-15 人工复核仍待签署；FastAPI、LangGraph 补检、完整诊断持久化与追踪仍待后续里程碑。
