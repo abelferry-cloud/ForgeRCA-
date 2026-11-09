@@ -56,7 +56,7 @@ def project_manual(row):
     }
 
 
-def load_file_records(root=ROOT):
+def load_file_corpus(root=ROOT):
     root = Path(root)
     allowed = indexable_files(root)
     corpus = {}
@@ -67,12 +67,18 @@ def load_file_records(root=ROOT):
         corpus[kind] = [json.loads(line) for line in (root / relative).read_text(encoding="utf-8").splitlines()
                         if line.strip()]
     sources = json.loads((root / "data/sources/manifest.json").read_text(encoding="utf-8"))["sources"]
-    validate_corpus(sources, corpus)
+    sources, evidence, _, _ = validate_corpus(sources, corpus)
     records = [project_record(record) for group in corpus.values() for record in group]
-    return validate_records(records)
+    validate_records(records)
+    return sources, evidence
 
 
-def load_manual_records(engine):
+def load_file_records(root=ROOT):
+    _, evidence = load_file_corpus(root)
+    return [project_record(record) for record in evidence.values()]
+
+
+def load_manual_rows(engine, identities=None):
     import sqlalchemy as sa
 
     from app.db import schema as db
@@ -80,14 +86,20 @@ def load_manual_records(engine):
     if INDEXABLE_DATABASE_TABLES != (db.chunk.name,):
         raise ValueError("Unexpected database corpus allowlist")
     query = sa.select(db.chunk, db.document.c.source_id, db.document.c.revision, db.document.c.models,
-                      db.document.c.firmware_scope, db.document.c.source_metadata).select_from(
+                      db.document.c.firmware_scope, db.document.c.source_metadata, db.document.c.sha256,
+                      db.document.c.document_code, db.document.c.source_url, db.document.c.accessed_at).select_from(
         db.chunk.join(db.document).join(db.ingest_run, sa.and_(
             db.chunk.c.ingest_run_id == db.ingest_run.c.ingest_run_id,
             db.chunk.c.document_key == db.ingest_run.c.document_key,
         ))).where(db.ingest_run.c.run_status == "succeeded").order_by(db.chunk.c.document_key, db.chunk.c.evidence_id)
+    if identities is not None:
+        query = query.where(sa.tuple_(db.chunk.c.document_key, db.chunk.c.evidence_id).in_(identities))
     with engine.connect() as connection:
-        records = [project_manual(row) for row in connection.execute(query).mappings()]
-    return validate_records(records)
+        return [dict(row) for row in connection.execute(query).mappings()]
+
+
+def load_manual_records(engine):
+    return validate_records([project_manual(row) for row in load_manual_rows(engine)])
 
 
 def validate_records(records):

@@ -1,6 +1,6 @@
 # Dense-only 检索（M1-21）
 
-本阶段提供明确的语料投影、新索引构建和查询命令，使用 M1-20 的阿里云北京 `text-embedding-v4`。依赖现有本地 OpenSearch 和 PostgreSQL，不新增 SDK、不下载 embedding 模型。引用原文回查属于 M1-22，生成和逐题评测仍未实现。
+本阶段提供明确的语料投影、新索引构建和查询命令，使用 M1-20 的阿里云北京 `text-embedding-v4`。依赖现有本地 OpenSearch 和 PostgreSQL，不新增 SDK、不下载 embedding 模型。M1-22 已接入[引用回查](citations.md)，生成和逐题评测仍未实现。
 
 ## 索引输入
 
@@ -72,4 +72,4 @@ python -m unittest discover -s tests -p test_dense.py -v
 
 PR #43 的 [PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42362689829) 与 [Compose / OpenSearch CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42362689853) 已于 2026-11-07 通过，2026-11-09 复核状态通过。数据库套件 14 项通过，Dense 套件 15 项（含真实服务）及文件投影套件 5 项通过。
 
-Windows Docker Engine 当前不可用。本机真实服务链路、引用回查和诊断质量尚未验收；M0-06 / M1-15 人工复核仍待人工完成。
+Windows Docker Engine 当前不可用。本机真实服务链路和诊断质量尚未验收；M1-22 的来源核对和定位器输出见[引用回查](citations.md)。M0-06 / M1-15 人工复核仍待人工完成。

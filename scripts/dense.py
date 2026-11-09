@@ -5,6 +5,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+from app.retrieval.citations import resolve_hits
 from app.retrieval.corpus import load_file_records, load_manual_records
 from app.retrieval.dense import SearchClient, SearchError, build_index, retrieve
 
@@ -49,6 +50,7 @@ def main(argv=None):
         else:
             result = retrieve(client, args.index, args.query, model=args.model, as_of=args.as_of,
                               firmware_version=args.firmware_version, top_k=args.top_k)
+            result["hits"] = resolve_hits(result["hits"])
         result["created_at"] = datetime.now(UTC).isoformat()
         serialized = json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
         output.parent.mkdir(parents=True, exist_ok=True)
