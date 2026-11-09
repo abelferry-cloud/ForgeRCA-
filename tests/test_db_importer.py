@@ -98,6 +98,39 @@ class ImportTransactionTests(unittest.TestCase):
             self.assertEqual(run["input_sha256"], prepared["input_sha256"])
             self.assertEqual(run["run_status"], "succeeded")
 
+    def test_citations_require_exact_revision_and_successful_unchanged_sources(self):
+        from app.retrieval.citations import CitationError, resolve_hits
+        from app.retrieval.corpus import load_manual_records, load_manual_rows
+        from test_citations import hit
+
+        for revision in ("A", "B"):
+            prepared = self.prepared(revision=revision)
+            prepared["document"]["source_metadata"]["effective_date"] = "2024-03-30"
+            self.import_snapshot(self.engine, prepared)
+        hits = [hit(row, rank) for rank, row in enumerate(load_manual_records(self.engine), 1)]
+        resolved = resolve_hits(hits, root=self.root, engine=self.engine)
+        self.assertEqual(len(resolved), 4)
+        self.assertEqual({row["source"]["revision"] for row in resolved}, {"A", "B"})
+        self.assertEqual(len({row["evidence_id"] for row in resolved}), 2)
+        for row in resolved:
+            self.assertEqual(row["source"]["document_key"], row["document_key"])
+            self.assertIsNone(row["locator"]["locations"][0]["printed_page"])
+        target = hits[0]
+        identities = [(target["document_key"], target["evidence_id"])]
+        self.assertEqual(len(load_manual_rows(self.engine, identities)), 1)
+        where = self.sa.and_(self.db.chunk.c.document_key == target["document_key"],
+                             self.db.chunk.c.evidence_id == target["evidence_id"])
+        with self.engine.begin() as connection:
+            connection.execute(self.db.chunk.update().where(where).values(text="synthetic changed text"))
+        with self.assertRaises(CitationError):
+            resolve_hits(hits, engine=self.engine)
+        with self.engine.begin() as connection:
+            connection.execute(self.db.chunk.update().where(where).values(text=target["text"]))
+            connection.execute(self.db.ingest_run.update().where(
+                self.db.ingest_run.c.document_key == target["document_key"]).values(run_status="failed"))
+        with self.assertRaises(CitationError):
+            resolve_hits(hits, engine=self.engine)
+
     def test_new_pages_append_but_changed_content_and_rechunking_do_not_overwrite(self):
         prepared = self.prepared()
         self.import_snapshot(self.engine, prepared)

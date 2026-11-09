@@ -243,6 +243,25 @@ class DenseCommandTests(unittest.TestCase):
 @unittest.skipUnless(os.environ.get("FORGERCA_TEST_OPENSEARCH") == "1",
                      "Enable explicitly for disposable real OpenSearch integration")
 class DenseOpenSearchTests(unittest.TestCase):
+    def test_file_hits_resolve_to_verified_pages_after_real_search(self):
+        from app.retrieval.citations import resolve_hits
+        from app.retrieval.corpus import load_file_records
+
+        client, encoder = dense.SearchClient(Settings()), FixtureEmbedder()
+        docs = load_file_records()
+        report = dense.build_index(client, docs, encoder)
+        index = report["index"]
+        self.addCleanup(client.request, "DELETE", f"/{index}")
+        result = dense.retrieve(client, index, "synthetic query", model=docs[0]["model"][0],
+                                as_of="2026-11-09T00:00:00+08:00", firmware_version=docs[0]["firmware_scope"],
+                                top_k=100, embedder=encoder)
+        resolved = resolve_hits(result["hits"])
+        first = next(row for row in resolved if row["evidence_id"] == "K001")
+        self.assertEqual(first["record_kind"], "knowledge_note")
+        self.assertEqual(first["locator"]["pdf_page"], 536)
+        self.assertEqual(first["source"]["revision"], first["document_revision"])
+        self.assertTrue(first["locator"]["url"].endswith("#page=536"))
+
     def test_build_search_ranking_filters_revision_identity_and_empty_result(self):
         client, encoder = dense.SearchClient(Settings()), FixtureEmbedder()
         docs = [document(), document("second", document_key="SYNTHETIC@B:" + "c" * 64, document_revision="B"),

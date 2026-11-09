@@ -9,6 +9,8 @@ on:
       - app/schemas/**
       - scripts/ingest.py
       - app/retrieval/corpus.py
+      - app/retrieval/citations.py
+      - tests/test_citations.py
       - app/retrieval/index_schema.py
       - scripts/validate_data.py
       - scripts/corpus_allowlist.py
@@ -29,6 +31,8 @@ on:
       - app/schemas/**
       - scripts/ingest.py
       - app/retrieval/corpus.py
+      - app/retrieval/citations.py
+      - tests/test_citations.py
       - app/retrieval/index_schema.py
       - scripts/validate_data.py
       - scripts/corpus_allowlist.py

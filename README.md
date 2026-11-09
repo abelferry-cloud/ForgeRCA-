@@ -132,7 +132,7 @@ M1-19 的 [OpenSearch 字段说明](docs/opensearch.md) 提供写入前校验及
 
 M1-20 的 [Embedding API 说明](docs/embedding.md) 提供阿里云百炼北京地域 `text-embedding-v4` 调用：1024 维、L2 归一化、每批最多 10 条，单条超出 4096 个 UTF-8 字节时拒绝发送。真实自造文本调用已验收；只发送显式输入，不下载本地 embedding 模型，输出留在 `artifacts/`。实际语料转换与 Dense-only Retriever 属于 M1-21。
 
-M1-21 的 [Dense-only 检索](docs/dense-retrieval.md) 提供 `python -m scripts.dense index/query`：将三个白名单文件和已入库手册块投影到独立新索引，按型号、可用时间和明确的固件适用性执行 k-NN Top-k，按完整证据身份去重。34 条实际输入的阿里云向量化准备已验证；本机 Docker 不可用，真实服务集成由 Linux CI 验证。引用原文回查属于 M1-22，不把检索分数当作诊断概率。
+M1-21 的 [Dense-only 检索](docs/dense-retrieval.md) 提供 `python -m scripts.dense index/query`：将三个白名单文件和已入库手册块投影到独立新索引，按型号、可用时间和明确的固件适用性执行 k-NN Top-k，按完整证据身份去重。34 条实际输入的阿里云向量化准备已验证；本机 Docker 不可用，真实服务集成由 Linux CI 验证。M1-22 已让查询默认执行[引用回查](docs/citations.md)，核对正文与来源版本并输出定位器；失败不发布部分报告。不把检索分数当作诊断概率。
 
 ### 1. 获取 ABB 官方 PDF（首期主知识库）
 
