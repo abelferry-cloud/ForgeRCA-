@@ -243,7 +243,8 @@ class DenseCommandTests(unittest.TestCase):
 @unittest.skipUnless(os.environ.get("FORGERCA_TEST_OPENSEARCH") == "1",
                      "Enable explicitly for disposable real OpenSearch integration")
 class DenseOpenSearchTests(unittest.TestCase):
-    def test_file_hits_resolve_to_verified_pages_after_real_search(self):
+    def test_file_hits_resolve_and_generate_after_real_search(self):
+        from app import generation
         from app.retrieval.citations import resolve_hits
         from app.retrieval.corpus import load_file_records
 
@@ -261,6 +262,14 @@ class DenseOpenSearchTests(unittest.TestCase):
         self.assertEqual(first["locator"]["pdf_page"], 536)
         self.assertEqual(first["source"]["revision"], first["document_revision"])
         self.assertTrue(first["locator"]["url"].endswith("#page=536"))
+        generator = Mock(configuration=deepcopy(generation.SPEC))
+        generator.complete.return_value = ({"status": "supported", "candidate_causes": [
+            {"cause": "合成测试候选", "explanation": "这里只验证引用绑定，不测试语义生成。",
+             "support": [{"index_id": first["index_id"], "quote": first["text"]}]}], "missing_evidence": []}, None)
+        answer = generation.answer_question("synthetic query", result["hits"], generator=generator)["answer"]
+        generator.complete.assert_called_once()
+        self.assertEqual(answer["citations"][0]["locator"], first["locator"])
+        self.assertEqual(answer["citations"][0]["index_id"], first["index_id"])
 
     def test_build_search_ranking_filters_revision_identity_and_empty_result(self):
         client, encoder = dense.SearchClient(Settings()), FixtureEmbedder()

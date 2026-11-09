@@ -1,4 +1,4 @@
-"""Build a fresh corpus index or retrieve explicit text using the dense baseline."""
+"""Build a fresh corpus index, retrieve evidence or generate a constrained answer."""
 
 import argparse
 import json
@@ -17,14 +17,16 @@ def main(argv=None):
     commands = parser.add_subparsers(dest="command", required=True)
     index = commands.add_parser("index", help="Read the file allowlist and successfully imported PostgreSQL chunks")
     query = commands.add_parser("query", help="Search one concrete index returned by index")
-    for command in (index, query):
+    answer = commands.add_parser("answer", help="Search, verify citations and explain evidence-supported candidates")
+    for command in (index, query, answer):
         command.add_argument("--output", type=Path, required=True)
-    query.add_argument("--index", required=True)
-    query.add_argument("--query", required=True)
-    query.add_argument("--model", required=True)
-    query.add_argument("--as-of", required=True)
-    query.add_argument("--firmware-version")
-    query.add_argument("--top-k", type=int, default=5)
+    for command in (query, answer):
+        command.add_argument("--index", required=True)
+        command.add_argument("--query", required=True)
+        command.add_argument("--model", required=True)
+        command.add_argument("--as-of", required=True)
+        command.add_argument("--firmware-version")
+        command.add_argument("--top-k", type=int, default=5)
     args = parser.parse_args(argv)
     output = args.output.resolve()
     if not output.is_relative_to((ROOT / "artifacts").resolve()) or output.suffix != ".json" or output.exists():
@@ -50,7 +52,12 @@ def main(argv=None):
         else:
             result = retrieve(client, args.index, args.query, model=args.model, as_of=args.as_of,
                               firmware_version=args.firmware_version, top_k=args.top_k)
-            result["hits"] = resolve_hits(result["hits"])
+            if args.command == "answer":
+                from app.generation import answer_question
+
+                result.update(answer_question(args.query, result["hits"]))
+            else:
+                result["hits"] = resolve_hits(result["hits"])
         result["created_at"] = datetime.now(UTC).isoformat()
         serialized = json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
         output.parent.mkdir(parents=True, exist_ok=True)

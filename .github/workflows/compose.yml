@@ -13,6 +13,8 @@ on:
       - versions.lock.json
       - config/opensearch/**
       - app/retrieval/**
+      - app/generation.py
+      - tests/test_generation.py
       - scripts/dense.py
       - scripts/corpus_allowlist.py
       - scripts/validate_data.py
@@ -35,6 +37,8 @@ on:
       - versions.lock.json
       - config/opensearch/**
       - app/retrieval/**
+      - app/generation.py
+      - tests/test_generation.py
       - scripts/dense.py
       - scripts/corpus_allowlist.py
       - scripts/validate_data.py
@@ -89,6 +93,7 @@ jobs:
           python -m unittest discover -s tests -p test_dense.py -v
           python -m unittest discover -s tests -p test_retrieval_corpus.py -v
           python -m unittest discover -s tests -p test_citations.py -v
+          python -m unittest discover -s tests -p test_generation.py -v
       - name: Write disposable records
         run: |
           docker compose exec -T postgres psql -U forgerca -d forgerca -v ON_ERROR_STOP=1 \
