@@ -70,4 +70,6 @@ python -m unittest discover -s tests -p test_dense.py -v
 # 仅对本地临时测试服务显式开启：FORGERCA_TEST_OPENSEARCH=1
 ```
 
+PR #43 的 [PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42362689829) 与 [Compose / OpenSearch CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42362689853) 已于 2026-11-07 通过，2026-11-09 复核状态通过。数据库套件 14 项通过，Dense 套件 15 项（含真实服务）及文件投影套件 5 项通过。
+
 Windows Docker Engine 当前不可用。本机真实服务链路、引用回查和诊断质量尚未验收；M0-06 / M1-15 人工复核仍待人工完成。
