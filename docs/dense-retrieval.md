@@ -93,3 +93,5 @@ python -m unittest discover -s tests -p test_dense.py -v
 PR #43 的 [PostgreSQL CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42362689829) 与 [Compose / OpenSearch CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42362689853) 已于 2026-11-07 通过，2026-11-09 复核状态通过。数据库套件 14 项通过，Dense 套件 15 项（含真实服务）及文件投影套件 5 项通过。
 
 Windows Docker Engine 当前不可用。本机真实服务链路和诊断质量尚未验收；M1-22 的来源核对和定位器输出见[引用回查](citations.md)。M0-06 / M1-15 人工复核仍待人工完成。
+
+2026-11-10 [PR #50 的 Compose CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42832904539) 已验证 257 条合成记录的真实跨页 Scroll、向量复用、跨修订、空索引与故障后的旧索引查询；同步套件 9 项中 8 项通过，CLI 依赖测试在系统 Python 下跳过、本地锁定环境通过。随后锁定环境运行 17 项 PostgreSQL 导入测试全部通过，包含替换→同步→退役→bulk 接受后故障→重试→引用回查；失败不复活旧证据，审计行保留。独立 PostgreSQL CI 与三服务重建回读也通过。该验收使用合成向量，不代表语义召回质量。
