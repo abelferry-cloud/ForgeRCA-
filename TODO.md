@@ -1,6 +1,6 @@
 # ForgeRCA · Engineering TODO / Roadmap
 
-> **版本**：v0.5.24（2026-11-10） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。**M1 已启动**，M1-01～14 的工程底座、PDF 解析与证据定位、质量回归及增量比较完成，M1-16 已加入显式安全标签与章节上下文保留，M1-17～18 七表、迁移及幂等导入通过 Linux PostgreSQL CI，M1-19 OpenSearch 字段/元数据契约通过临时索引实测。M1-15 已准备两份手册、五个物理页的 33 个不同锚点，全部待人工核对；M1-20 已接入阿里云北京 Embedding API 并通过自造文本实测与 Linux CI；M1-21 已完成显式语料投影、新索引和 Dense-only 查询，通过真实 PostgreSQL / OpenSearch Linux CI；M1-22 已完成查询后的来源、文档版本与定位器核验，通过真实 PostgreSQL / OpenSearch Linux CI；M1-23 已完成一次受约束生成，真实 API 小样本与 Linux CI 通过；M1-24 已完成来源事务替换/逻辑退役、向量复用同步与故障隔离，通过真实 PostgreSQL / OpenSearch 跨服务 CI。
+> **版本**：v0.5.24（2026-11-10） · **当前**：M0 的工程项与数据项均已完成——仓库基线、分支保护、CI 三门禁、安全文档在 v0.4.1 收口；M0-17～M0-22 于 v0.5.0 完成并留下实测证据。**M0 仍未整体收口**：唯一剩余项是 **M0-06 人工领域复核**，按其定义不能由 AI 代劳，`docs/reviews/seed-v0.2-human-review.md` 的审核人、日期与决策仍待填写。**M1 已启动**，M1-01～14 的工程底座、PDF 解析与证据定位、质量回归及增量比较完成，M1-16 已加入显式安全标签与章节上下文保留，M1-17～18 七表、迁移及幂等导入通过 Linux PostgreSQL CI，M1-19 OpenSearch 字段/元数据契约通过临时索引实测。M1-15 已准备两份手册、五个物理页的 33 个不同锚点，全部待人工核对；M1-20 已接入阿里云北京 Embedding API 并通过自造文本实测与 Linux CI；M1-21 已完成显式语料投影、新索引和 Dense-only 查询，通过真实 PostgreSQL / OpenSearch Linux CI；M1-22 已完成查询后的来源、文档版本与定位器核验，通过真实 PostgreSQL / OpenSearch Linux CI；M1-23 已完成一次受约束生成，真实 API 小样本与 Linux CI 通过；M1-24 已完成来源事务替换/逻辑退役、向量复用同步与故障隔离，通过真实 PostgreSQL / OpenSearch 跨服务 CI；M1-25 的生产请求与索引回读隔离审计已通过真实服务 CI。
 > **首期设备**：ABB ACS580-01（沿用仓库现有来源清单和数据协议）；后续多品牌扩展单独列入 Backlog。  
 > 本清单是**工作计划，不代表实际已完成**。以下默认任务未勾选；可在 GitHub PR 验收后逐项勾选。
 
@@ -16,7 +16,7 @@
 | 里程碑 | 目标 | 依赖 | 当前状态 |
 | --- | --- | --- | --- |
 | **M0** | 数据/文档/安全基线 | 无 | 工程与数据项已完成（22/23）；仅 M0-06 人工领域复核待签署 |
-| **M1** | 基础 Dense RAG 与可信引用 | M0 | 进行中（M1-01～14、16～19 完成；人工锚点核对、模型推理、实际语料索引与检索待完成） |
+| **M1** | 基础 Dense RAG 与可信引用 | M0 | 进行中（M1-01～14、16～25 完成；人工锚点复核、逐题基线与真实手册端到端验收待完成） |
 | **M2** | 混合检索 + 版本过滤 + Reranker | M1 | 未开始 |
 | **M3** | 证据约束的 Neo4j GraphRAG | M1/M2 | 未开始 |
 | **M4** | LangGraph 动态补检与 Langfuse | M2/M3 | 未开始 |
@@ -97,7 +97,7 @@
 - [x] **M1-22 · P0** 从 Retriever 结果回查原始引用来源并验证文档版本，输出 `evidence_id + locator`。*(2026-11-09：[PR #45](https://github.com/abelferry-cloud/ForgeRCA-/pull/45) 接入默认查询路径，核对全部投影字段、父文档与定位器指纹；真实 PostgreSQL / OpenSearch Linux CI 通过。本地 pytest 303 passed、12 skipped、675 subtests；系统 unittest 310 项、25 skipped。详见[引用回查](docs/citations.md))*
 - [x] **M1-23 · P0** 实现第一版受约束生成：只根据返回证据解释候选原因，没有证据则 `insufficient`。*(2026-11-09：[PR #47](https://github.com/abelferry-cloud/ForgeRCA-/pull/47) 完成北京固定快照 API、来源回查、结构/引用/摘录校验及空证据零生成调用；真实 API 三次调用共 2248 Token，Linux CI 通过。校验不等于语义蕴含或领域审核。详见[生成说明](docs/generation.md))*
 - [x] **M1-24 · P1** 为检索、索引增量更新、失败回滚与文档删除添加单元/集成测试。*(2026-11-10：[PR #49](https://github.com/abelferry-cloud/ForgeRCA-/pull/49) 完成来源事务替换/退役；[PR #50](https://github.com/abelferry-cloud/ForgeRCA-/pull/50) 完成正文向量复用、完整回读、空索引与故障隔离。[跨服务 CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42832904539) 通过真实 Scroll 和 17 项数据库导入测试，含替换→同步→退役→失败重试→引用核验。本地 pytest 324 passed、22 skipped、740 subtests；系统 unittest 341 项、35 skipped。无模型下载或新依赖；调用方显式切换新索引，不宣称跨服务原子事务。详见[同步说明](docs/dense-retrieval.md#增量同步与失败处理m1-24))*
-- [ ] **M1-25 · P1** 确认任何 eval gold label、`reference.json` 不进入向量索引。*([Issue #51](https://github.com/abelferry-cloud/ForgeRCA-/issues/51)：已添加禁止来源标记、生产 CLI/bulk/生成请求审计及完整回读测试，本地门禁通过，真实服务 CI 待验收；见[隔离说明](docs/index-isolation.md)。)*
+- [x] **M1-25 · P1** 确认任何 eval gold label、`reference.json` 不进入向量索引。*(2026-11-10：[PR #52](https://github.com/abelferry-cloud/ForgeRCA-/pull/52) 审计禁止来源标记、实际 Embedding/bulk/生成请求及索引完整回读；[Linux CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42834716759) 的 5 项隔离测试全部通过。本地 pytest 328 passed、23 skipped、761 subtests；系统 unittest 346 项、36 skipped。检查当前管线隔离，不代替人工复制内容审查或盲测划分；见[隔离说明](docs/index-isolation.md)。)*
 - [ ] **M1-26 · P1** 导出逐题 `retrieved_ids`, `rank`, `score`, `citations` 作为 Dense-only 基线产物。
 
 **M1 DoD**：对至少一条 ABB 手册诊断问题，Retriever 能输出真实证据、对应 PDF 页码和有效适用性；数据导入重复执行不产生重复证据。

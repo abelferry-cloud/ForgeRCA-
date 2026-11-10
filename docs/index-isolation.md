@@ -17,3 +17,5 @@ uv run --frozen python -m unittest discover -s tests -p test_index_isolation.py 
 ```
 
 测试无需模型下载或 API 密钥，生成响应和向量均为合成夹具。该检查证明当前管线的来源、字段和请求隔离；它不自动识别人工复制进合法正文的答案，也不代替 M5 的事件组划分、独立标注和盲测审核。
+
+2026-11-10 验收：[PR #52 的 Compose CI](https://github.com/abelferry-cloud/ForgeRCA-/actions/runs/42834716759) 在锁定环境下运行全部 5 项专项测试，全部通过（含真实 OpenSearch 和 CLI，无跳过）；此前的 17 项 PostgreSQL 导入/跨服务生命周期测试及三服务重建回读也通过。本地 Ruff、数据和敏感文件检查通过；pytest 328 passed、23 skipped、761 subtests；系统 unittest 346 项、36 skipped。
