@@ -20,6 +20,7 @@ on:
       - scripts/validate_data.py
       - tests/test_dense.py
       - tests/test_dense_sync.py
+      - tests/test_index_isolation.py
       - tests/test_db_importer.py
       - tests/test_ingest.py
       - app/db/**
@@ -51,6 +52,7 @@ on:
       - scripts/validate_data.py
       - tests/test_dense.py
       - tests/test_dense_sync.py
+      - tests/test_index_isolation.py
       - tests/test_db_importer.py
       - tests/test_ingest.py
       - app/db/**
@@ -119,6 +121,7 @@ jobs:
           docker compose exec -T postgres psql -U forgerca -d forgerca -v ON_ERROR_STOP=1 \
             -c "CREATE DATABASE forgerca_test;"
           uv run --frozen python -m unittest discover -s tests -p test_db_importer.py -v
+          uv run --frozen python -m unittest discover -s tests -p test_index_isolation.py -v
       - name: Write disposable records
         run: |
           docker compose exec -T postgres psql -U forgerca -d forgerca -v ON_ERROR_STOP=1 \
