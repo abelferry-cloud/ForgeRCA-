@@ -74,7 +74,10 @@ class DenseContractsTests(unittest.TestCase):
     def test_build_publishes_only_complete_index_with_stable_ids(self):
         self.client.request.side_effect = [{"acknowledged": True},
                                            {"errors": False, "items": [{"create": {"status": 201}}]}, {"count": 1}]
-        result = dense.build_index(self.client, [document()], self.encoder)
+        with patch.object(dense, "_read_index", return_value={
+            index_record_id(document()): {**document(), "embedding": vector()},
+        }):
+            result = dense.build_index(self.client, [document()], self.encoder)
         self.assertRegex(result["index"], r"^forgerca-dense-v3-[a-f0-9]{32}$")
         self.assertEqual(result["records"], 1)
         self.assertEqual(self.encoder.calls, [["first"]])

@@ -19,6 +19,13 @@ on:
       - scripts/corpus_allowlist.py
       - scripts/validate_data.py
       - tests/test_dense.py
+      - tests/test_dense_sync.py
+      - tests/test_db_importer.py
+      - tests/test_ingest.py
+      - app/db/**
+      - app/ingestion/**
+      - scripts/ingest.py
+      - migrations/**
       - tests/test_retrieval_corpus.py
       - tests/test_citations.py
       - app/schemas/document.py
@@ -43,6 +50,13 @@ on:
       - scripts/corpus_allowlist.py
       - scripts/validate_data.py
       - tests/test_dense.py
+      - tests/test_dense_sync.py
+      - tests/test_db_importer.py
+      - tests/test_ingest.py
+      - app/db/**
+      - app/ingestion/**
+      - scripts/ingest.py
+      - migrations/**
       - tests/test_retrieval_corpus.py
       - tests/test_citations.py
       - app/schemas/document.py
@@ -91,9 +105,20 @@ jobs:
         run: |
           python -m unittest discover -s tests -p test_opensearch_schema.py -v
           python -m unittest discover -s tests -p test_dense.py -v
+          python -m unittest discover -s tests -p test_dense_sync.py -v
           python -m unittest discover -s tests -p test_retrieval_corpus.py -v
           python -m unittest discover -s tests -p test_citations.py -v
           python -m unittest discover -s tests -p test_generation.py -v
+      - name: Verify source replacement and retirement across PostgreSQL and OpenSearch
+        env:
+          FORGERCA_TEST_POSTGRES: "1"
+          FORGERCA_TEST_OPENSEARCH: "1"
+          POSTGRES_DB: forgerca_test
+        run: |
+          uv sync --frozen
+          docker compose exec -T postgres psql -U forgerca -d forgerca -v ON_ERROR_STOP=1 \
+            -c "CREATE DATABASE forgerca_test;"
+          uv run --frozen python -m unittest discover -s tests -p test_db_importer.py -v
       - name: Write disposable records
         run: |
           docker compose exec -T postgres psql -U forgerca -d forgerca -v ON_ERROR_STOP=1 \

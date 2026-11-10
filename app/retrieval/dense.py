@@ -88,6 +88,83 @@ def build_index(client, records, embedder=None):
     complete = [{**record, "embedding": vector} for record, vector in zip(records, vectors, strict=True)]
     for record in complete:
         validate_index_record(record, mapping)
+    index = _write_index(client, complete)
+    return {"index": index, "records": len(records), "embedding_configuration": deepcopy(SPEC),
+            "embedding_batches": encoded["batches"]}
+
+
+def _read_index(client, index):
+    """Read one complete scroll snapshot; release only its own search context."""
+    mapping, records, scroll_id, total = load_mapping(), {}, None, None
+    try:
+        page = client.request("POST", f"/{index}/_search?scroll=1m", {
+            "size": 256, "sort": ["_doc"], "track_total_hits": True, "query": {"match_all": {}},
+        })
+        while True:
+            current = page["_scroll_id"]
+            if not isinstance(current, str) or not current or current == "_all":
+                raise ValueError
+            scroll_id = current
+            count = page["hits"]["total"]
+            if (page["timed_out"] is not False or page["_shards"]["failed"] != 0
+                    or count["relation"] != "eq" or type(count["value"]) is not int or count["value"] < 0):
+                raise ValueError
+            if total is None:
+                total = count["value"]
+            if count["value"] != total or not isinstance(page["hits"]["hits"], list):
+                raise ValueError
+            for hit in page["hits"]["hits"]:
+                record = hit["_source"]
+                validate_index_record(record, mapping)
+                identity = index_record_id(record)
+                if hit["_index"] != index or hit["_id"] != identity or identity in records:
+                    raise ValueError
+                records[identity] = record
+            if len(records) > total or (not page["hits"]["hits"] and len(records) != total):
+                raise ValueError
+            if len(records) == total:
+                return records
+            page = client.request("POST", "/_search/scroll", {"scroll": "1m", "scroll_id": scroll_id})
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        raise SearchError("Invalid or incomplete index snapshot") from None
+    finally:
+        if scroll_id is not None:
+            cleared = client.request("DELETE", "/_search/scroll", {"scroll_id": [scroll_id]})
+            if not isinstance(cleared, dict) or cleared.get("succeeded") is not True:
+                raise SearchError("Index scroll cleanup was not acknowledged")
+
+
+def sync_index(client, old_index, records, embedder=None):
+    """Reuse unchanged text vectors and publish a fully checked, independent index."""
+    validate_records(records)
+    client.verify_mapping(old_index)
+    previous = _read_index(client, old_index)
+    old = {key: {field: value for field, value in record.items() if field != "embedding"}
+           for key, record in previous.items()}
+    current = {index_record_id(record): record for record in records}
+    changed_text = [key for key in current if key not in old or current[key]["text"] != old[key]["text"]]
+    encoded = _encoder(embedder).encode([current[key]["text"] for key in changed_text]) if changed_text else {
+        "vectors": [], "batches": [],
+    }
+    if len(encoded["vectors"]) != len(changed_text):
+        raise ValueError("Embedding count differs from changed corpus size")
+    vectors = dict(zip(changed_text, encoded["vectors"], strict=True))
+    complete = [{**record, "embedding": vectors[key] if key in vectors else previous[key]["embedding"]}
+                for key, record in current.items()]
+    mapping = load_mapping()
+    for record in complete:
+        validate_index_record(record, mapping)
+    no_op = old == current
+    index = old_index if no_op else _write_index(client, complete)
+    return {"old_index": old_index, "index": index, "no_op": no_op, "records": len(current),
+            "added": len(current.keys() - old.keys()), "removed": len(old.keys() - current.keys()),
+            "modified": sum(current[key] != old[key] for key in current.keys() & old.keys()),
+            "embedded_records": len(changed_text), "reused_vectors": len(current) - len(changed_text),
+            "embedding_configuration": deepcopy(SPEC), "embedding_batches": encoded["batches"]}
+
+
+def _write_index(client, complete):
+    mapping = load_mapping()
     index = client.prefix + uuid4().hex
     client.check_index_name(index)
     # A successful PUT is the ownership boundary. A failed create is never followed
@@ -100,14 +177,17 @@ def build_index(client, records, embedder=None):
         for record in complete:
             lines.extend((json.dumps({"create": {"_id": index_record_id(record)}}),
                           json.dumps(record, ensure_ascii=False, allow_nan=False)))
-        result = client.request("POST", f"/{index}/_bulk?refresh=true", ("\n".join(lines) + "\n").encode("utf-8"))
-        if (not isinstance(result, dict) or result.get("errors") is not False
-                or len(result.get("items", [])) != len(records)
-                or any(item.get("create", {}).get("status") != 201 for item in result["items"])):
-            raise SearchError("Bulk creation did not succeed for every record")
+        if complete:
+            result = client.request("POST", f"/{index}/_bulk?refresh=true", ("\n".join(lines) + "\n").encode("utf-8"))
+            if (not isinstance(result, dict) or result.get("errors") is not False
+                    or len(result.get("items", [])) != len(complete)
+                    or any(item.get("create", {}).get("status") != 201 for item in result["items"])):
+                raise SearchError("Bulk creation did not succeed for every record")
         client.verify_mapping(index)
-        if client.request("GET", f"/{index}/_count").get("count") != len(records):
+        if client.request("GET", f"/{index}/_count").get("count") != len(complete):
             raise SearchError("Index record count differs from the validated corpus")
+        if _read_index(client, index) != {index_record_id(record): record for record in complete}:
+            raise SearchError("Index readback differs from the validated corpus")
     except (SearchError, ValueError, TypeError, KeyError, AttributeError):
         try:
             deleted = client.request("DELETE", f"/{index}")
@@ -116,8 +196,7 @@ def build_index(client, records, embedder=None):
         except SearchError:
             raise SearchError("Index build failed and cleanup failed; inspect the new index before retrying") from None
         raise SearchError("Index build failed; the new index was removed") from None
-    return {"index": index, "records": len(records), "embedding_configuration": deepcopy(SPEC),
-            "embedding_batches": encoded["batches"]}
+    return index
 
 
 def query_filter(model, as_of, firmware_version):

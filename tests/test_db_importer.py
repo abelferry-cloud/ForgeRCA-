@@ -358,6 +358,65 @@ class ImportTransactionTests(unittest.TestCase):
             self.sa.event.remove(self.engine, "after_cursor_execute", fail_after_retirement)
         self.assertEqual(load_manual_records(self.engine), before)
 
+    @unittest.skipUnless(os.environ.get("FORGERCA_TEST_OPENSEARCH") == "1", "Requires disposable OpenSearch too")
+    def test_replace_and_retire_sync_to_search_without_resurrecting_old_evidence(self):
+        from unittest.mock import patch
+
+        from app.config import Settings
+        from app.ingestion.importer import retire_document
+        from app.retrieval.citations import CitationError, resolve_hits
+        from app.retrieval.corpus import load_manual_records
+        from app.retrieval.dense import SearchClient, SearchError, build_index, retrieve, sync_index
+        from test_dense import AT, FixtureEmbedder
+
+        client, encoder = SearchClient(Settings()), FixtureEmbedder()
+        snapshots = [self.prepared(revision=revision) for revision in ("A", "B")]
+        for prepared in snapshots:
+            self.import_snapshot(self.engine, prepared)
+        records = load_manual_records(self.engine)
+        old = build_index(client, records, encoder)["index"]
+        self.addCleanup(client.request, "DELETE", f"/{old}")
+
+        def query(index):
+            return retrieve(client, index, "synthetic", model="TEST-MODEL", as_of=AT, embedder=encoder)["hits"]
+
+        self.assertEqual(len(resolve_hits(query(old), engine=self.engine)), 4)
+        self.import_snapshot(self.engine, self.changed_snapshot(), replace=True)
+        with self.assertRaises(CitationError):
+            resolve_hits(query(old), engine=self.engine)
+        updated = sync_index(client, old, load_manual_records(self.engine), encoder)
+        new = updated["index"]
+        self.addCleanup(client.request, "DELETE", f"/{new}")
+        self.assertEqual((updated["added"], updated["removed"], updated["modified"],
+                          updated["embedded_records"], updated["reused_vectors"]), (1, 1, 1, 2, 2))
+        self.assertEqual(len(resolve_hits(query(new), engine=self.engine)), 4)
+
+        retire_document(self.engine, snapshots[0]["document"]["document_key"])
+        with self.assertRaises(CitationError):
+            resolve_hits(query(new), engine=self.engine)
+        # Failure after the service accepted the bulk must leave the previous index intact.
+        transport = client.request
+
+        def fail_bulk(method, path, payload=None):
+            response = transport(method, path, payload)
+            if "_bulk" in path:
+                raise SearchError("synthetic lost bulk acknowledgement")
+            return response
+
+        with patch.object(client, "request", side_effect=fail_bulk), self.assertRaises(SearchError):
+            sync_index(client, new, load_manual_records(self.engine))
+        self.assertEqual(len(query(new)), 4)
+        retired = sync_index(client, new, load_manual_records(self.engine))
+        active = retired["index"]
+        self.addCleanup(client.request, "DELETE", f"/{active}")
+        self.assertEqual((retired["removed"], retired["embedded_records"]), (2, 0))
+        self.assertEqual({row["document_revision"] for row in resolve_hits(query(active), engine=self.engine)}, {"B"})
+        self.assertTrue(sync_index(client, active, load_manual_records(self.engine))["no_op"])
+        self.assertEqual(self.counts()["chunk"], 4)
+        self.assertEqual(self.counts()["ingest_run"], 3)
+        with self.assertRaisesRegex(ValueError, "retired"):
+            self.import_snapshot(self.engine, snapshots[0])
+
     def test_events_replay_without_duplicates_and_preserve_unknown_firmware(self):
         events = seed_events()
         self.assertEqual(self.import_events(self.engine, events), {"asset": 1, "work_order": 1, "alarm": 1})
